@@ -4,15 +4,15 @@
 
 static inline void EmixFRAME(uint8_t MixMode, uint8_t* Frame, uint8_t Dat)
 {
-    switch(MixMode)
+    switch(MixMode & 0x7f)
     {
         case 0:
         {
-            *Frame |= Dat;
+			*Frame |= Dat;
         } break;
         case 1:
         {
-            *Frame |= Dat;
+			*Frame |= Dat;
         } break;
         case 2:
         {
@@ -24,21 +24,19 @@ static inline void EmixFRAME(uint8_t MixMode, uint8_t* Frame, uint8_t Dat)
         } break;
         case 4:
         {
-            *Frame ^= Dat;
+			*Frame ^= Dat;
         } break;
     }
 }
 
 void EtoFRAME(uint8_t Layer)
 {
-    uint8_t iY, iX, temp, MixMode;
+    uint8_t iY, iX, temp;
     int8_t MBy, Sy, Sx;
 
     // Calculate the offset value MBy
     MBy = E_Layer[Layer].Ypos % 8;
     if(MBy < 0)  {MBy += 8;}
-
-    MixMode = E_Layer[Layer].MixMode;
 
     // Navigate through elements E page by page
     for(iY = 0 ; iY < E_Layer[Layer].Ysize ; iY++)
@@ -63,10 +61,10 @@ void EtoFRAME(uint8_t Layer)
                 // If the current rendering is the last page of E
                 if((iY+1) == E_Layer[Layer].Ysize)
                 {
-                    FRAME[0][Sx] &= (MixMode == 0)?
+                    FRAME[0][Sx] &= (E_Layer[Layer].MixMode == 0)?
                             (0xff << MBy) :
                         0xff;
-                    EmixFRAME(MixMode, &FRAME[0][Sx], (MixMode == 2)?
+                    EmixFRAME(E_Layer[Layer].MixMode, &FRAME[0][Sx], (E_Layer[Layer].MixMode == 2)?
                             ((temp >> (-Sy)) | (0xff << MBy)) :
                         (temp >> (-Sy))
                         );
@@ -75,38 +73,38 @@ void EtoFRAME(uint8_t Layer)
                 continue;
             }
 
-            // ???? Sy ?? 0~FRAME_PageSize*8-1?????? 0~63??
-            // ???????? E ???????????????????????
+			// At this point, the rendering coordinate Sy becomes positive.
+            // If the current rendering position is on page 2 or later of E
             if(iY)
             {
-                FRAME[Sy >> 3][Sx] &= (MixMode == 0)?
+                FRAME[Sy >> 3][Sx] &= (E_Layer[Layer].MixMode == 0)?
                         0 :
                     0xff;
-                EmixFRAME(MixMode, &FRAME[Sy >> 3][Sx],
+                EmixFRAME(E_Layer[Layer].MixMode, &FRAME[Sy >> 3][Sx],
                     (E[(iY-1)*E_Layer[Layer].Xsize + iX] >> (8-MBy)) |
                     (temp << MBy)
                     );
             }
-            // ????? E ????????????????
+            // If the current rendering position is on the first page of E
             else
             {
-                FRAME[Sy >> 3][Sx] &= (MixMode == 0)?
+                FRAME[Sy >> 3][Sx] &= (E_Layer[Layer].MixMode == 0)?
                         (0xff >> (8-MBy)) :
                     0xff;
-                EmixFRAME(MixMode, &FRAME[Sy >> 3][Sx], (MixMode == 2)?
+                EmixFRAME(E_Layer[Layer].MixMode, &FRAME[Sy >> 3][Sx], (E_Layer[Layer].MixMode == 2)?
                         ((temp << MBy) | (0xff >> (8-MBy))) :
                     (temp << MBy)
                     );
             }
 
 
-            // ???????? E ????????????????尾??
+            // If the current rendering position is on the last page of E
             if(((iY+1) == E_Layer[Layer].Ysize) && (((Sy >> 3)+1) < FRAME_PageSize))
             {
-                FRAME[(Sy >> 3)+1][Sx] &= (MixMode == 0)?
+                FRAME[(Sy >> 3)+1][Sx] &= (E_Layer[Layer].MixMode == 0)?
                         (0xff << MBy) :
                     0xff;
-                EmixFRAME(MixMode, &FRAME[(Sy >> 3)+1][Sx], (MixMode == 2)?
+                EmixFRAME(E_Layer[Layer].MixMode, &FRAME[(Sy >> 3)+1][Sx], (E_Layer[Layer].MixMode == 2)?
                         ((temp >> (8-MBy)) | (0xff << MBy)) :
                     (temp >> (8-MBy))
                     );

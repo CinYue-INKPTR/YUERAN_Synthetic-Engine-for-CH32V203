@@ -57,19 +57,19 @@ void MainInit(void)
     }
 
     E_Layer[1].Type = Type_DrawBlock;
-    E_Layer[1].Xsize = 6;
-    E_Layer[1].Ysize = 3;
+    E_Layer[1].Xsize = 16;
+    E_Layer[1].Ysize = 2;
     E_Layer[1].MixMode = 0;
     E_Layer[1].Xpos = 2;
     E_Layer[1].Ypos = 3;
-    E_Layer[1].Alpha = 10;
-    E_Layer[1].Alpha_Fcn = Alpha_Mode0;
+    E_Layer[1].Alpha = 255;
+    E_Layer[1].Alpha_Fcn = Alpha_Mode4;
 
 }
 
 int main(void)
 {
-    uint8_t i = 10, n, m = 100, l = 1;
+    uint8_t i = 10, n, m = 100, l = 1, tmp;
     int8_t j = 127, k = 30;
     MainInit();
 
@@ -79,6 +79,7 @@ int main(void)
         if(GPIO_ReadInputDataBit(ButtonLight_Port, Button_Pin) == RESET)
         {
             Delay_Ms(10);
+            tmp = 1;
             E_Layer[1].MixMode = (E_Layer[1].MixMode == 4)? 0 : E_Layer[1].MixMode+1;
             while(GPIO_ReadInputDataBit(ButtonLight_Port, Button_Pin) == RESET);
         }
@@ -89,12 +90,17 @@ int main(void)
             FRAME[1][n] = 0xff;
         }
 
-        FRAME[0][16] = Font[(E_Layer[1].MixMode+0x30-0x20)*6 + 0];
-        FRAME[0][17] = Font[(E_Layer[1].MixMode+0x30-0x20)*6 + 1];
-        FRAME[0][18] = Font[(E_Layer[1].MixMode+0x30-0x20)*6 + 2];
-        FRAME[0][19] = Font[(E_Layer[1].MixMode+0x30-0x20)*6 + 3];
-        FRAME[0][20] = Font[(E_Layer[1].MixMode+0x30-0x20)*6 + 4];
-        FRAME[0][21] = Font[(E_Layer[1].MixMode+0x30-0x20)*6 + 5];
+        FRAME[0][16] = Font[(((E_Layer[1].MixMode)&0x7f)+0x30-0x20)*6 + 0];
+        FRAME[0][17] = Font[(((E_Layer[1].MixMode)&0x7f)+0x30-0x20)*6 + 1];
+        FRAME[0][18] = Font[(((E_Layer[1].MixMode)&0x7f)+0x30-0x20)*6 + 2];
+        FRAME[0][19] = Font[(((E_Layer[1].MixMode)&0x7f)+0x30-0x20)*6 + 3];
+        FRAME[0][20] = Font[(((E_Layer[1].MixMode)&0x7f)+0x30-0x20)*6 + 4];
+        FRAME[0][21] = Font[(((E_Layer[1].MixMode)&0x7f)+0x30-0x20)*6 + 5];
+        if(l)
+        {
+            FRAME[0][22] = 0x18;
+            FRAME[0][23] = 0x18;
+        }
 
         FRAME[3][0] = 0xaf;
 
@@ -108,7 +114,7 @@ int main(void)
         E_Layer[1].Ypos = k;
         RefrashFRAME(l);
 
-        if(i == 0) i = 10;
+        if(i == 0) i = 255;
         if(j > -5) j--;
         else j = 127;
         if(k > -23) k--;

@@ -45,7 +45,7 @@ void LoadE(uint8_t Layer)
                 temp = i*E_Layer[Layer].Xsize + j;
                 if(temp < E_Size)
                 {
-                    E[temp] = 0xaf;
+                    E[temp] = 0xef;
                 }
             }
         }

@@ -11,8 +11,10 @@
 #define Alpha_Mode0         0
 #define Alpha_Mode1         (1 << 5)
 #define Alpha_Mode2         (2 << 5)
+#define Alpha_Mode3         (3 << 5)
+#define Alpha_Mode4         (4 << 5)
 
-#define Text_MaxLength      32
+#define Text_ByteLength     32
 
 
 // Size INFO
@@ -67,12 +69,14 @@ typedef struct
 	uint8_t Block_Xsize_Target;
 	// X size function for block, D7~6 select mode, D5~0 speed value for slow
 	uint8_t Block_Xsize_Fcn;
+	
 	// Y size for block
 	uint8_t Block_Ysize;
 	// Y size target for block
 	uint8_t Block_Ysize_Target;
 	// Y size function for block, D7~6 select mode, D5~0 speed value for slow
 	uint8_t Block_Ysize_Fcn;
+	
 	// For block
     uint8_t RoundCorners;
 
@@ -84,7 +88,7 @@ typedef struct
     // Text font
     uint8_t Font;
     // Text content
-    uint8_t Text[Text_MaxLength];
+    uint8_t Text[Text_ByteLength];
     // For text
     uint8_t TextLength;
     
