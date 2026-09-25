@@ -1,0 +1,102 @@
+#ifndef YUERAN_Define_H
+#define YUERAN_Define_H
+
+#include <stdint.h>
+
+// Status define
+#define Type_Picture        0
+#define Type_Char           1
+#define Type_DrawBlock      2
+
+#define Alpha_Mode0         0
+#define Alpha_Mode1         (1 << 5)
+#define Alpha_Mode2         (2 << 5)
+
+#define Text_MaxLength      32
+
+
+// Size INFO
+#define E_Layer_Size        3
+
+#define FRAME_PageSize      4
+#define FRAME_ListSize      128
+
+#define E_Size              256
+
+
+
+typedef struct
+{
+    // Element type
+    uint8_t Type;
+
+
+    // X size for text & picture
+    uint8_t Xsize;
+    // Y size for text & picture
+    uint8_t Ysize;
+
+    // Select mode for mixing in EtoFRAME
+    uint8_t MixMode;
+
+    // X position
+    int8_t Xpos;
+    // X position target
+    int8_t Xpos_Target;
+    // X position funtion, D7~6 select mode, D5~0 speed value for slow
+    uint8_t Xpos_Fcn;
+
+    // Y position
+    int8_t Ypos;
+    // Y position target
+    int8_t Ypos_Target;
+    // Y position function, D7~6 select mode, D5~0 speed value for slow
+    uint8_t Ypos_Fcn;
+
+    // Alpha
+    uint8_t Alpha;
+    // Alpha target
+    uint8_t Alpha_Target;
+    // Alpha function, D7~5 select mode,  D4 uniform-speed/#nonstop, D3~0 speed value for slow
+    uint8_t Alpha_Fcn;
+
+
+	// X size for block
+	uint8_t Block_Xsize;
+	// X size target for block
+	uint8_t Block_Xsize_Target;
+	// X size function for block, D7~6 select mode, D5~0 speed value for slow
+	uint8_t Block_Xsize_Fcn;
+	// Y size for block
+	uint8_t Block_Ysize;
+	// Y size target for block
+	uint8_t Block_Ysize_Target;
+	// Y size function for block, D7~6 select mode, D5~0 speed value for slow
+	uint8_t Block_Ysize_Fcn;
+	// For block
+    uint8_t RoundCorners;
+
+
+
+    // Flash address for picture
+    uint32_t FlashAdd;
+
+    // Text font
+    uint8_t Font;
+    // Text content
+    uint8_t Text[Text_MaxLength];
+    // For text
+    uint8_t TextLength;
+    
+
+    // Stream length, disable with value 0
+    uint16_t Stream_Length;
+    // D15 direction, D14 circulation, D13~7 step-length, D6~0 frame-freeze-value
+    uint16_t Stream_Attributes;
+} Element;
+
+extern Element E_Layer[E_Layer_Size];
+extern uint8_t FRAME[FRAME_PageSize][FRAME_ListSize];
+extern uint8_t E[E_Size];
+
+#endif
