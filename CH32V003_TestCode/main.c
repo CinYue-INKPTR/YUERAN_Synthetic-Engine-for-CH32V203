@@ -40,30 +40,21 @@ void MainInit(void)
     SoftIIC_Init();
     OLED_Init(OLED_AddressingMode_HorizontalMode, OLED_SetMode_X_Flip_Normal, OLED_SetMode_Y_Flip_Normal, OLED_SetMode_Color_Normal, 255);
 
+    // Type_DrawBlock   |   MixMode, Xpos, Ypos, Alpha, Alpha_Fcn, Block_Xsize, Block_Ysize, Block_Corners
+    E_Layer[1].Type             = Type_DrawBlock;
+    E_Layer[1].MixMode          = 0;
+    E_Layer[1].Xpos             = 2;
+    E_Layer[1].Ypos             = 3;
+    E_Layer[1].Alpha            = 255;
+    E_Layer[1].Alpha_Fcn        = Alpha_Mode0;
+    E_Layer[1].Block_Xsize      = 50;
+    E_Layer[1].Block_Ysize      = 31;
 
+    // Pay attention during testing!
+    E_Layer[1].Xsize            = E_Layer[1].Block_Xsize;
+    E_Layer[1].Ysize            = (E_Layer[1].Block_Ysize % 8)? ((E_Layer[1].Block_Ysize >> 3)+1) : (E_Layer[1].Block_Ysize >> 3);
 
-    E_Layer[0].Type = Type_Char;
-    E_Layer[0].Xsize = 6;
-    E_Layer[0].Ysize = 1;
-    E_Layer[0].MixMode = 0;
-    E_Layer[0].Xpos = 0;
-    E_Layer[0].Ypos = 0;
-    E_Layer[0].Alpha = 10;
-    E_Layer[0].Alpha_Fcn = Alpha_Mode0;
-    E_Layer[0].TextLength = 3;
-    for(i = 0 ; i < E_Layer[0].TextLength ; i++)
-    {
-        E_Layer[0].Text[i] = Str[i];
-    }
-
-    E_Layer[1].Type = Type_DrawBlock;
-    E_Layer[1].Xsize = 16;
-    E_Layer[1].Ysize = 2;
-    E_Layer[1].MixMode = 0;
-    E_Layer[1].Xpos = 2;
-    E_Layer[1].Ypos = 3;
-    E_Layer[1].Alpha = 255;
-    E_Layer[1].Alpha_Fcn = Alpha_Mode4;
+    E_Layer[1].Block_Corners    = 0x80;
 
 }
 
@@ -109,18 +100,22 @@ int main(void)
         LoadE(1);
         AlphaE(1);
         EtoFRAME(1);
-        E_Layer[1].Alpha = i--;
-        E_Layer[1].Xpos = j;
-        E_Layer[1].Ypos = k;
+
+        if(i == 0x80) i = 0x88;
+//        E_Layer[1].Alpha = i--;
+        E_Layer[1].Block_Corners    = i--;
+
+        if(j == -23) j = 127;
+        E_Layer[1].Xpos = j--;
+
+        if(k == -5) k = 31;
+        E_Layer[1].Ypos = k--;
         RefrashFRAME(l);
 
-        if(i == 0) i = 255;
-        if(j > -5) j--;
-        else j = 127;
-        if(k > -23) k--;
-        else k = 31;
+
+
         Delay_Ms(100);
-        if(!m) {m=100; l = !l;}
-        else {m--;}
+//        if(!m) {m=100; l = !l;}
+//        else {m--;}
     }
 }

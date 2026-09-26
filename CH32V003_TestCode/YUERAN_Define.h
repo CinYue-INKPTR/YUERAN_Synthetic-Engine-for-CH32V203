@@ -3,10 +3,14 @@
 
 #include <stdint.h>
 
-// Status define
+//
 #define Type_Picture        0
-#define Type_Char           1
-#define Type_DrawBlock      2
+// Xsize, Ysize, MixMode, Xpos, Ypos, Alpha, Text_Font, Text[], Text_Length, Stream_Length, Stream_Attributes
+#define Type_Char_ASCII     1
+// Xsize, Ysize, MixMode, Xpos, Ypos, Alpha, Text_Font, Text[], Text_Length, Stream_Length, Stream_Attributes
+#define Type_Char_GB2312	2
+// MixMode, Xpos, Ypos, Alpha, Block_Xsize, Block_Ysize, Block_Corners
+#define Type_DrawBlock      3
 
 #define Alpha_Mode0         0
 #define Alpha_Mode1         (1 << 5)
@@ -26,10 +30,14 @@
 #define E_Size              256
 
 
-
 typedef struct
 {
-    // Element type
+    // Element type     |   Status
+    // ----------------------------------------------------------------------------------------------------------------------------
+    // Type_Picture     |   Xsize, Ysize, MixMode, Xpos, Ypos, Alpha, Picture_FlashAdd, Stream_Length, Stream_Attributes
+    // Type_Char_ASCII  |   Xsize, Ysize, MixMode, Xpos, Ypos, Alpha, Text_Font, Text[], Text_Length, Stream_Length, Stream_Attributes
+    // Type_Char_GB2312 |   Xsize, Ysize, MixMode, Xpos, Ypos, Alpha, Text_Font, Text[], Text_Length, Stream_Length, Stream_Attributes
+    // Type_DrawBlock   |   MixMode, Xpos, Ypos, Alpha, Alpha_Fcn, Block_Xsize, Block_Ysize, Block_Corners
     uint8_t Type;
 
 
@@ -77,20 +85,24 @@ typedef struct
 	// Y size function for block, D7~6 select mode, D5~0 speed value for slow
 	uint8_t Block_Ysize_Fcn;
 	
-	// For block
-    uint8_t RoundCorners;
+	// For block, D7 beveled corners / # rounded corners, D6~0 value
+	// Corners  |   value
+	// ----------------------------------
+	// beveled  |   0~8 (|0x80)
+	// rounded  |   0~6
+    uint8_t Block_Corners;
 
 
 
     // Flash address for picture
-    uint32_t FlashAdd;
+    uint32_t Picture_FlashAdd;
 
     // Text font
-    uint8_t Font;
+    uint8_t Text_Font;
     // Text content
     uint8_t Text[Text_ByteLength];
     // For text
-    uint8_t TextLength;
+    uint8_t Text_Length;
     
 
     // Stream length, disable with value 0
@@ -102,5 +114,8 @@ typedef struct
 extern Element E_Layer[E_Layer_Size];
 extern uint8_t FRAME[FRAME_PageSize][FRAME_ListSize];
 extern uint8_t E[E_Size];
+
+extern const uint8_t B_Corners_Mask[16][8];
+extern const uint8_t R_Corners_Mask[12][8];
 
 #endif
