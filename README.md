@@ -1,7 +1,7 @@
 # YUERAN_Synthetic-Engine-for-CH32V203
 
-### The big blue fat fish
+虽然我从未想过把梗加入协议范围，未来也不可能有这样的计划，本来目的是为了给各位带来一点小开心
 
-![Let me go ~](./1.jpg)
+但本仓库有协议，然后用梗图可能涉及版权问题……
 
-![What're u thinking about](./2.gif)
+目前想不到什么埋彩蛋了（仅仅过了一个版本就江郎才尽了吗）
