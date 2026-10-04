@@ -2,15 +2,7 @@
 #include "YUERAN_FcnE.h"
 #include "YUERAN_Define.h"
 
-#define SUstep_Xpos			0
-#define SUstep_Ypos			1
-#define SUstep_BlockXsize	2
-#define SUstep_BlockYsize	3
-
-// Speed up step
-static uint8_t SUstep[8][4] = {0};
-
-static void FcnE_Pos(uint8_t Layer, int8_t* Value_Now, int8_t Value_Order, uint8_t FcnINFO, uint8_t SUstep_Flag)
+static void FcnE_Pos(uint8_t Layer, int8_t* Value_Now, int8_t Value_Order, uint8_t FcnINFO, uint8_t* SUstep)
 {
 	uint8_t tmp, value;
 
@@ -72,37 +64,37 @@ static void FcnE_Pos(uint8_t Layer, int8_t* Value_Now, int8_t Value_Order, uint8
 		{
 			if(*Value_Now != Value_Order)
 			{
-				if((SUstep[Layer][SUstep_Flag] + value) < 255)	{SUstep[Layer][SUstep_Flag] += value;}
-				else											{SUstep[Layer][SUstep_Flag] = 255;}
+				if((*SUstep + value) < 255)	{*SUstep += value;}
+				else						{*SUstep = 255;}
 				
 				if(Value_Order > *Value_Now)
 				{
 					
-					*Value_Now = ((Value_Order - *Value_Now) > SUstep[Layer][SUstep_Flag])?
-						(*Value_Now + SUstep[Layer][SUstep_Flag]) :
+					*Value_Now = ((Value_Order - *Value_Now) > *SUstep)?
+						(*Value_Now + *SUstep) :
 						(Value_Order);
 				}
 				else
 				{
-					*Value_Now = ((*Value_Now - Value_Order) > SUstep[Layer][SUstep_Flag])?
-						(*Value_Now - SUstep[Layer][SUstep_Flag]) :
+					*Value_Now = ((*Value_Now - Value_Order) > *SUstep)?
+						(*Value_Now - *SUstep) :
 						(Value_Order);
 				}
 			}
 			else
 			{
-				SUstep[Layer][SUstep_Flag] = 0;
+			    *SUstep = 0;
 			}
 		} break;
 	}
 	// 如果加速模式未完成动画就切换模式，要清除历史值（因为没有进加速的else清零）
 	if((FcnINFO >> 6) < 3)
 	{
-		SUstep[Layer][SUstep_Flag] = 0;
+	    *SUstep = 0;
 	}
 }
 
-static void FcnE_BlockSize(uint8_t Layer, uint8_t* Value_Now, uint8_t Value_Order, uint8_t FcnINFO, uint8_t SUstep_Flag)
+static void FcnE_BlockSize(uint8_t Layer, uint8_t* Value_Now, uint8_t Value_Order, uint8_t FcnINFO, uint8_t* SUstep)
 {
 	uint8_t tmp, value;
 
@@ -164,32 +156,32 @@ static void FcnE_BlockSize(uint8_t Layer, uint8_t* Value_Now, uint8_t Value_Orde
 		{
 			if(*Value_Now != Value_Order)
 			{
-				if((SUstep[Layer][SUstep_Flag] + value) < 255)	{SUstep[Layer][SUstep_Flag] += value;}
-				else											{SUstep[Layer][SUstep_Flag] = 255;}
+				if((*SUstep + value) < 255)	{*SUstep += value;}
+				else						{*SUstep = 255;}
 				
 				if(Value_Order > *Value_Now)
 				{
 					
-					*Value_Now = ((Value_Order - *Value_Now) > SUstep[Layer][SUstep_Flag])?
-						(*Value_Now + SUstep[Layer][SUstep_Flag]) :
+					*Value_Now = ((Value_Order - *Value_Now) > *SUstep)?
+						(*Value_Now + *SUstep) :
 						(Value_Order);
 				}
 				else
 				{
-					*Value_Now = ((*Value_Now - Value_Order) > SUstep[Layer][SUstep_Flag])?
-						(*Value_Now - SUstep[Layer][SUstep_Flag]) :
+					*Value_Now = ((*Value_Now - Value_Order) > *SUstep)?
+						(*Value_Now - *SUstep) :
 						(Value_Order);
 				}
 			}
 			else
 			{
-				SUstep[Layer][SUstep_Flag] = 0;
+			    *SUstep = 0;
 			}
 		} break;
 	}
 	if((FcnINFO >> 6) < 3)
 	{
-		SUstep[Layer][SUstep_Flag] = 0;
+	    *SUstep = 0;
 	}
 }
 
@@ -216,9 +208,9 @@ static void FcnE_Alpha(uint8_t Layer)
 
 void FcnE(uint8_t Layer)
 {
-	FcnE_Pos(Layer, &E_Layer[Layer].Xpos, E_Layer[Layer].Xpos_Target, E_Layer[Layer].Xpos_Fcn, SUstep_Xpos);
-	FcnE_Pos(Layer, &E_Layer[Layer].Ypos, E_Layer[Layer].Ypos_Target, E_Layer[Layer].Ypos_Fcn, SUstep_Ypos);
+	FcnE_Pos(Layer, &E_Layer[Layer].Xpos, E_Layer[Layer].Xpos_Target, E_Layer[Layer].Xpos_Fcn, &E_Layer[Layer].Xpos_Fcn_SUstep);
+	FcnE_Pos(Layer, &E_Layer[Layer].Ypos, E_Layer[Layer].Ypos_Target, E_Layer[Layer].Ypos_Fcn, &E_Layer[Layer].Ypos_Fcn_SUstep);
 	FcnE_Alpha(Layer);
-	FcnE_BlockSize(Layer, &E_Layer[Layer].Block_Xsize, E_Layer[Layer].Block_Xsize_Target, E_Layer[Layer].Block_Xsize_Fcn, SUstep_BlockXsize);
-	FcnE_BlockSize(Layer, &E_Layer[Layer].Block_Ysize, E_Layer[Layer].Block_Ysize_Target, E_Layer[Layer].Block_Ysize_Fcn, SUstep_BlockYsize);
+	FcnE_BlockSize(Layer, &E_Layer[Layer].Block_Xsize, E_Layer[Layer].Block_Xsize_Target, E_Layer[Layer].Block_Xsize_Fcn, &E_Layer[Layer].Block_Xsize_Fcn_SUstep);
+	FcnE_BlockSize(Layer, &E_Layer[Layer].Block_Ysize, E_Layer[Layer].Block_Ysize_Target, E_Layer[Layer].Block_Ysize_Fcn, &E_Layer[Layer].Block_Ysize_Fcn_SUstep);
 }

@@ -3,8 +3,8 @@
 
 #define W25Qxx_CS_RCC_APB2Periph	RCC_APB2Periph_GPIOC
 // CS
-#define W25Qxx_CS_Port    			GPIOC
-#define W25Qxx_CS_Pin     			GPIO_Pin_1
+#define W25Qxx_CS_Port    			GPIOA
+#define W25Qxx_CS_Pin     			GPIO_Pin_0
 
 void W25Qxx_Init(void);
 uint8_t W25Qxx_ReadBusy(void);

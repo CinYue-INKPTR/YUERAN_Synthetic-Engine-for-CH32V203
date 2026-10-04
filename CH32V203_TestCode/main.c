@@ -3,6 +3,8 @@
 
 #include "HardSPI.h"
 #include "YUERAN_OLEDspi.h"
+#include "HardSPI_W25Qxx.h"
+#include "USART.h"
 
 #include "YUERAN_Define.h"
 #include "YUERAN_LoadE.h"
@@ -10,72 +12,106 @@
 #include "YUERAN_EtoFRAME.h"
 #include "YUERAN_RefrashFRAME.h"
 #include "YUERAN_FcnE.h"
+#include "YUERAN_CmdLoad.h"
+
+void ModePin_Init(void)
+{
+    GPIO_InitTypeDef  GPIO_InitStructure = {0};
+
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+    GPIO_Init(GPIOB, &GPIO_InitStructure);
+}
+
+void ModePin_Switch(uint8_t* Flag)
+{
+    if(GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_7) == SET)
+    {
+        if(*Flag == 0)
+        {
+            *Flag = 1;
+            USART1_OFF();
+            USART2_ON();
+            Delay_Ms(10);
+        }
+    }
+    else
+    {
+        if(*Flag == 1)
+        {
+            *Flag = 0;
+            USART2_OFF();
+            USART1_ON();
+            Delay_Ms(10);
+        }
+    }
+}
 
 int main(void)
 {
-    uint8_t i = 0;
+    uint8_t Mode = 1, i;
 
     SystemCoreClockUpdate();
     Delay_Init();
     ButtonLight_Init();
 
     HardSPI_Init();
+    W25Qxx_Init();
     OLED_Init(OLED_AddressingMode_HorizontalMode, OLED_SetMode_X_Flip_Normal, OLED_SetMode_Y_Flip_Normal, OLED_SetMode_Color_Normal, 255);
+    ModePin_Init();
 
-    E_Layer[0].Type = Type_DrawBlock;
-    // Type_DrawBlock   |   MixMode, Xpos, Ypos, Alpha, Alpha_Fcn, Block_Xsize, Block_Ysize, Block_Corners
-    E_Layer[0].MixMode = 0;
+    USART_Setup();
+    TIM2_40ms_Init();
 
-    E_Layer[0].Xpos = 0;
-    E_Layer[0].Xpos_Fcn = (2 << 6)+4;
-
-    E_Layer[0].Ypos = 0;
-    E_Layer[0].Ypos_Fcn = (2 << 6)+4;
-
-    E_Layer[0].Alpha = 16;
-    E_Layer[0].Alpha_Fcn = (0 << 5)+(1 << 4)+1;
-
-    E_Layer[0].Block_Xsize = 0;
-    E_Layer[0].Block_Xsize_Fcn = (2 << 6)+2;
-
-    E_Layer[0].Block_Ysize = 0;
-    E_Layer[0].Block_Ysize_Fcn = (1 << 6)+2;
-
-    E_Layer[0].Block_Corners = 2;
 
     while(1)
     {
-        if(i)
-        {
-            E_Layer[0].Xpos_Target = 0;
-            E_Layer[0].Ypos_Target = 0;
-            E_Layer[0].Alpha_Target = 1;
-            E_Layer[0].Block_Xsize_Target = 10;
-            E_Layer[0].Block_Ysize_Target = 40;
-        }
-        else
-        {
-            E_Layer[0].Xpos_Target = 90;
-            E_Layer[0].Ypos_Target = 50;
-            E_Layer[0].Alpha_Target = 16;
-            E_Layer[0].Block_Xsize_Target = 30;
-            E_Layer[0].Block_Ysize_Target = 14;
-        }
+//        ModePin_Switch(&Mode);
 
 
 
-        LoadE(0);
-        AlphaE(0);
-        EtoFRAME(0);
-        RefrashFRAME(1);
-        FcnE(0);
+        // Render mode
+//        if(Mode == 1)
+//        {
 
 
-        Delay_Ms(30);
 
-        if(ButtonLogic())
-        {
-            i = !i;
-        }
+            if(ReadFlag_TIM2())
+            {
+                for(i = 0 ; i < 8 ; i++)
+                {
+                    if(E_Layer[i].Type)
+                    {
+                        LoadE(i);
+                        AlphaE(i);
+                        EtoFRAME(i);
+                        FcnE(i);
+                    }
+                }
+                RefrashFRAME(FRAME_ClnFlag);
+                BackDataSend();
+            }
+
+
+
+            if(USART_GetFlagStatus(USART1, USART_FLAG_IDLE) == SET)
+            {
+                USART_ClearFlag(USART1, USART_FLAG_IDLE);
+                if(DMA_GetFlagStatus(DMA1_FLAG_TC5) == SET) {RenderCmdLoad();}
+                else                                        {RenderCmd_DMAreset();}
+            }
+            if(USART_GetFlagStatus(USART1, USART_FLAG_ORE) == SET)
+            {
+                USART_ClearFlag(USART1, USART_FLAG_ORE);
+            }
+//            RenderCmdLoad();
+//        }
+        // Flash mode
+//        if(Mode == 0)
+//        {
+//
+//        }
     }
 }

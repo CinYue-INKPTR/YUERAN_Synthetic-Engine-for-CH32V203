@@ -391,5 +391,6 @@ void AlphaE(uint8_t Layer)
         case 2:	{AlphaE_Mode2(Layer);} break;
         case 3:	{AlphaE_Mode3(Layer);} break;
         case 4:	{AlphaE_Mode4(Layer);} break;
+        default:{AlphaE_Mode0(Layer);}
     }
 }

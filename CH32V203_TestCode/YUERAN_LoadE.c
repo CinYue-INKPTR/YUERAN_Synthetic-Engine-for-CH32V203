@@ -25,7 +25,7 @@ static inline void LoadPicture(uint8_t Layer)
 static inline void LoadChr_ASCII(uint8_t Layer)
 {
 	uint8_t i, j, k, ChrSize, ChrCount;
-	uint32_t ASCII_Add;
+//	uint32_t ASCII_Add;
 	// 特性：仅支持一个元素一行字符
 	// 注意：在EtoFRAME中，页与页是对应的，因此加载字模时要按顺序每个字的第1页，然后每个字的第2页……，不能一个字的完整字模紧邻排序
 	// 要先计算可容纳的字数，如果溢出E的存储空间就舍弃多余的字符
@@ -41,9 +41,9 @@ static inline void LoadChr_ASCII(uint8_t Layer)
 	{
 //		INKPTR_SPI_Start_Flash();
 //		INKPTR_SPI_SwapByte(FlashReadCmd);
-		ASCII_Add =
-			(E_Layer[Layer].Text[i] - FontAdd[E_Layer[Layer].Text_Font][FontAdd_Chr])*ChrSize +
-			FontAdd[E_Layer[Layer].Text_Font][FontAdd_Add];
+//		ASCII_Add =
+//			(E_Layer[Layer].Text[i] - FontAdd[E_Layer[Layer].Text_Font][FontAdd_Chr])*ChrSize +
+//			FontAdd[E_Layer[Layer].Text_Font][FontAdd_Add];
 //		INKPTR_SPI_SwapByte((uint8_t)(ASCII_Add >> 16));
 //		INKPTR_SPI_SwapByte((uint8_t)(ASCII_Add >> 8));
 //		INKPTR_SPI_SwapByte((uint8_t)ASCII_Add);
@@ -54,7 +54,6 @@ static inline void LoadChr_ASCII(uint8_t Layer)
 //				E[j*ChrCount*E_Layer[Layer].Block_Xsize + i*E_Layer[Layer].Block_Xsize + k] = INKPTR_SPI_SwapByte(0xff);
 			}
 		}
-//		INKPTR_SPI_Stop_Flash();
 	}
 }
 
@@ -157,9 +156,9 @@ void LoadE(uint8_t Layer)
 {
 	switch(E_Layer[Layer].Type)
 	{
-		case Type_Picture:		{LoadPicture(Layer);}	break;
-		case Type_Char_ASCII:	{LoadChr_ASCII(Layer);}	break;
-		case Type_Char_GB2312:	{LoadChr_GB2312(Layer);}break;
-		case Type_DrawBlock:	{LoadDrawBlock(Layer);}	break;
+		case 1: {LoadPicture(Layer);}	break;
+		case 2:	{LoadChr_ASCII(Layer);}	break;
+		case 3:	{LoadChr_GB2312(Layer);}break;
+		case 4:	{LoadDrawBlock(Layer);}	break;
 	}
 }

@@ -1,9 +1,22 @@
 #include <stdint.h>
 #include "YUERAN_Define.h"
 
-Element E_Layer[E_Layer_Size];
-uint8_t FRAME[FRAME_PageSize][FRAME_ListSize];
-uint8_t E[E_Size];
+Element E_Layer[E_Layer_Size] = {0};
+uint8_t FRAME[FRAME_PageSize][FRAME_ListSize] = {0};
+uint8_t E[E_Size] = {0};
+uint8_t FRAME_ClnFlag = 1;
+
+uint8_t RenderCmd[RenderCmd_Size];
+uint8_t RenderCmd_Sequence = 0xff;
+
+// Sequence marking and Xpos, Ypos, Alpha, Block_Xsize, Block_Ysize (for 8 layers)
+uint8_t BackData[BackData_Size];
+
+uint8_t USART2_BUFFER[USART2_BUFFER_Size];
+uint16_t USART2_RxLen = 0;
+uint8_t USART2_RxFlag = 0;
+
+uint16_t Developer_FrameRenderingTime;
 
 const uint8_t R_Corners_Mask[12][8] =
 {

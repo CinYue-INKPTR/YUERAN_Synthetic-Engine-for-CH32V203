@@ -40,7 +40,7 @@ uint8_t ReadButton(void)
 
 uint8_t ButtonLogic(void)
 {
-    uint8_t i;
+    uint8_t i = 0;
 
     if(ReadButton())
     {

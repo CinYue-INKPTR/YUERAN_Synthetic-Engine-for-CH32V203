@@ -2,12 +2,6 @@
 #include "HardSPI.h"
 #include "HardSPI_W25Qxx.h"
 
-#define W25Qxx_CS_RCC_APB2Periph	RCC_APB2Periph_GPIOC
-// CS
-#define W25Qxx_CS_Port    			GPIOC		// OUT
-#define W25Qxx_CS_Pin     			GPIO_Pin_1	// OUT
-
-
 // Flag
 #define W25Qxx_Flag_Busy            0x01
 
@@ -52,33 +46,33 @@ static inline void W25Qxx_CS(FlagStatus Dat)
 
 uint8_t W25Qxx_ReadBusy(void)
 {
-    uint8_t i;
+    uint8_t tmp;
 
-    W25Qxx_CS(RESET);
-    W25Qxx_SwapBytes(W25Qxx_SRegCmd_Read);
-	i = (W25Qxx_SwapBytes(0xff) & W25Qxx_Flag_Busy)? 1 : 0;
-    W25Qxx_CS(SET);
+    W25Qxx_CS(Bit_RESET);
+    HardSPI_SwapBytes(W25Qxx_SRegCmd_Read);
+	tmp = (HardSPI_SwapBytes(0xff) & W25Qxx_Flag_Busy)? 1 : 0;
+    W25Qxx_CS(Bit_SET);
 
-    return i;
+    return tmp;
 }
 
 uint16_t W25Qxx_GetSectorQuantity(void)
 {
 	uint8_t INFO;
 	
-	W25Qxx_CS(RESET);
-	W25Qxx_SwapBytes(W25Qxx_Cmd_DeviceID);
-	if(W25Qxx_SwapBytes(0xff) == 0xef)
+	W25Qxx_CS(Bit_RESET);
+	HardSPI_SwapBytes(W25Qxx_Cmd_DeviceID);
+	if(HardSPI_SwapBytes(0xff) == 0xef)
 	{
-		W25Qxx_SwapBytes(0xff);
-		INFO = W25Qxx_SwapBytes(0xff) - W25Qxx_StorageINFO_Offset;
+	    HardSPI_SwapBytes(0xff);
+		INFO = HardSPI_SwapBytes(0xff) - W25Qxx_StorageINFO_Offset;
 		INFO = 0x100 << INFO;
 	}
 	else
 	{
 		INFO = 0;
 	}
-	W25Qxx_CS(SET);
+	W25Qxx_CS(Bit_SET);
 
 	return INFO;
 }
@@ -87,22 +81,22 @@ void W25Qxx_ReadData(uint32_t ByteAdd, uint8_t* Dat, uint32_t Size)
 {
 	uint32_t i;
 	
-	W25Qxx_CS(RESET);
-	W25Qxx_SwapBytes(W25Qxx_Cmd_ReadData);
-	W25Qxx_SwapBytes((uint8_t)(ByteAdd >> 16));
-	W25Qxx_SwapBytes((uint8_t)(ByteAdd >> 8));
-	W25Qxx_SwapBytes((uint8_t)ByteAdd);
+	W25Qxx_CS(Bit_RESET);
+	HardSPI_SwapBytes(W25Qxx_Cmd_ReadData);
+	HardSPI_SwapBytes((uint8_t)(ByteAdd >> 16));
+	HardSPI_SwapBytes((uint8_t)(ByteAdd >> 8));
+	HardSPI_SwapBytes((uint8_t)ByteAdd);
 	for(i = 0 ; i < Size ; i++)
 	{
-		*Dat++ = W25Qxx_SwapBytes(0xff);
+		*Dat++ = HardSPI_SwapBytes(0xff);
 	}
-	W25Qxx_CS(SET);
+	W25Qxx_CS(Bit_SET);
 }
 
 void W25Qxx_WriteEnable(uint8_t En)
 {
 	W25Qxx_CS(0);
-	W25Qxx_SwapBytes((En)? W25Qxx_Cmd_WriteEnable : W25Qxx_Cmd_WriteDisable);
+	HardSPI_SwapBytes((En)? W25Qxx_Cmd_WriteEnable : W25Qxx_Cmd_WriteDisable);
 	W25Qxx_CS(1);
 }
 
@@ -112,54 +106,54 @@ void W25Qxx_PageProgram(uint16_t PageAdd, uint8_t* Dat, uint16_t Size)
 
 	W25Qxx_WriteEnable(1);
 	if(Size > 256)	{Size = 256;}
-	W25Qxx_CS(RESET);
-	W25Qxx_SwapBytes(W25Qxx_Cmd_PageProgram);
-	W25Qxx_SwapBytes((uint8_t)(PageAdd >> 8));
-	W25Qxx_SwapBytes((uint8_t)PageAdd);
-	W25Qxx_SwapBytes(0x00);
+	W25Qxx_CS(Bit_RESET);
+	HardSPI_SwapBytes(W25Qxx_Cmd_PageProgram);
+	HardSPI_SwapBytes((uint8_t)(PageAdd >> 8));
+	HardSPI_SwapBytes((uint8_t)PageAdd);
+	HardSPI_SwapBytes(0x00);
 	for(i = 0 ; i < Size ; i++)
 	{
-		W25Qxx_SwapBytes(*Dat++);
+	    HardSPI_SwapBytes(*Dat++);
 	}
-	W25Qxx_CS(SET);
+	W25Qxx_CS(Bit_SET);
 }
 
 void W25Qxx_Erase_Chip(void)
 {
 	W25Qxx_WriteEnable(1);
 	
-	W25Qxx_CS(RESET);
-	W25Qxx_SwapBytes(W25Qxx_Cmd_ChipErase);
-	W25Qxx_CS(SET);
+	W25Qxx_CS(Bit_RESET);
+	HardSPI_SwapBytes(W25Qxx_Cmd_ChipErase);
+	W25Qxx_CS(Bit_SET);
 }
 
 void W25Qxx_Erase_Block(uint8_t BlockAdd)
 {
 	W25Qxx_WriteEnable(1);
 	
-	W25Qxx_CS(RESET);
-	W25Qxx_SwapBytes(W25Qxx_Cmd_BlockErase);
-	W25Qxx_SwapBytes(BlockAdd);
-	W25Qxx_SwapBytes(0x00);
-	W25Qxx_SwapBytes(0x00);
-	W25Qxx_CS(SET);
+	W25Qxx_CS(Bit_RESET);
+	HardSPI_SwapBytes(W25Qxx_Cmd_BlockErase);
+	HardSPI_SwapBytes(BlockAdd);
+	HardSPI_SwapBytes(0x00);
+	HardSPI_SwapBytes(0x00);
+	W25Qxx_CS(Bit_SET);
 }
 
 void W25Qxx_Erase_Sector(uint16_t SectorAdd)
 {
 	W25Qxx_WriteEnable(1);
 	
-	W25Qxx_CS(RESET);
-	W25Qxx_SwapBytes(W25Qxx_Cmd_SectorErase);
-	W25Qxx_SwapBytes((uint8_t)(SectorAdd >> 4));
-	W25Qxx_SwapBytes((uint8_t)(SectorAdd << 4));
-	W25Qxx_SwapBytes(0x00);
-	W25Qxx_CS(SET);
+	W25Qxx_CS(Bit_RESET);
+	HardSPI_SwapBytes(W25Qxx_Cmd_SectorErase);
+	HardSPI_SwapBytes((uint8_t)(SectorAdd >> 4));
+	HardSPI_SwapBytes((uint8_t)(SectorAdd << 4));
+	HardSPI_SwapBytes(0x00);
+	W25Qxx_CS(Bit_SET);
 }
 
 void W25Qxx_PowerDown(uint8_t En)
 {
-	W25Qxx_CS(RESET);
-	W25Qxx_SwapBytes((En)? W25Qxx_Cmd_PowerDown : W25Qxx_Cmd_ReleasePowerDown);
-	W25Qxx_CS(SET);
+	W25Qxx_CS(Bit_RESET);
+	HardSPI_SwapBytes((En)? W25Qxx_Cmd_PowerDown : W25Qxx_Cmd_ReleasePowerDown);
+	W25Qxx_CS(Bit_SET);
 }
