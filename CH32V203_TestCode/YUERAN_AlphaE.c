@@ -1,19 +1,30 @@
-#include <stdint.h>
 #include "YUERAN_AlphaE.h"
+
+#include <stdint.h>
 #include "YUERAN_Define.h"
 
-#define AlphaE_Mode(Fcn)	((Fcn) >> 5)
+#define AlphaFcn_GetMode(Dat)	((Dat) >> 5)
 
-static inline void AlphaE_Mode0(uint8_t Layer)
+#define AlphaFcn_Mode_UNIFORM	0
+#define AlphaFcn_Mode_TOP       1
+#define AlphaFcn_Mode_BOTTOM    2
+#define AlphaFcn_Mode_LEFT      3
+#define AlphaFcn_Mode_RIGHT     4
+
+
+
+
+
+static inline void AlphaE_UNIFORM(uint8_t Layer)
 {
-    uint16_t E_DrawLength = E_Layer[Layer].Xsize * E_Layer[Layer].Ysize;
-	uint16_t i;
+    uint16_t i, E_DrawLength;
 	
-	switch(E_Layer[Layer].Alpha)
+	E_DrawLength = E_Layer[Layer].Xsize * E_Layer[Layer].Ysize;
+	switch (E_Layer[Layer].Alpha >> 4)
 	{
 		case 0:
 		{
-			for(i = 0 ; i < E_DrawLength ; i++)
+			for (i = 0 ; i < E_DrawLength ; i++)
 			{
 				E[i] = 0;
 			}
@@ -21,376 +32,271 @@ static inline void AlphaE_Mode0(uint8_t Layer)
 
 		case 1:
 		{
-			for(i = 0 ; i < E_DrawLength ; i++)
+			for (i = 0 ; i < E_DrawLength ; i++)
 			{
-				if(i & 3)
-				{
-					E[i] = 0;
-				}
-				else
-				{
-					if(i & 7)
-					{
-						E[i] &= 0x11;
-					}
-					else
-					{
-						E[i] &= 0x44;
-					}
-				}
+				if (i & 3)		{E[i] = 0;}
+				else if (i & 7)	{E[i] &= 0x11;}
+				else			{E[i] &= 0x44;}
 			}
 		} break;
 
 		case 2:
 		{
-			for(i = 0 ; i < E_DrawLength ; i++)
+			for (i = 0 ; i < E_DrawLength ; i++)
 			{
-				if(i & 1)
-				{
-					E[i] = 0;
-				}
-				else
-				{
-					if(i & 0x03)
-					{
-						E[i] &= 0x11;
-					}
-					else
-					{
-						E[i] &= 0x44;
-					}
-				}
+				if (i & 1)		{E[i] = 0;}
+				else if (i & 3)	{E[i] &= 0x11;}
+				else			{E[i] &= 0x44;}
 			}
 		} break;
 
 		case 3:
 		{
-			for(i = 0 ; i < E_DrawLength ; i++)
+			for (i = 0 ; i < E_DrawLength ; i++)
 			{
-				if(i & 1)
-				{
-					E[i] &= 0x11;
-				}
-				else
-				{
-					E[i] &= 0x44;
-				}
+				if (i & 1)		{E[i] &= 0x11;}
+				else			{E[i] &= 0x44;}
 			}
 		} break;
 
 		case 4:
 		{
-			for(i = 0 ; i < E_DrawLength ; i++)
+			for (i = 0 ; i < E_DrawLength ; i++)
 			{
-				if(i & 3)
+				if (i & 3)
 				{
-					if(i & 1)
-					{
-						E[i] &= 0xaa;
-					}
-					else
-					{
-						E[i] &= 0x44;
-					}
+					if (i & 1)		{E[i] &= 0xaa;}
+					else			{E[i] &= 0x44;}
 				}
-				else
-				{
-					E[i] &= 0x11;
-				}
+				else			{E[i] &= 0x11;}
 			}
 		} break;
 
 		case 5:
 		{
-			for(i = 0 ; i < E_DrawLength ; i++)
+			for (i = 0 ; i < E_DrawLength ; i++)
 			{
-				if(i & 1)
-				{
-					E[i] &= 0x55;
-				}
-				else
-				{
-					E[i] &= 0xaa;
-				}
+				if (i & 1)		{E[i] &= 0x55;}
+				else			{E[i] &= 0xaa;}
 			}
 		} break;
 
 		case 6:
 		{
-			for(i = 0 ; i < E_DrawLength ; i++)
+			for (i = 0 ; i < E_DrawLength ; i++)
 			{
-				if(i & 3)
+				if (i & 3)
 				{
-					if(i & 1)
-					{
-						E[i] &= ~0xaa;
-					}
-					else
-					{
-						E[i] &= ~0x44;
-					}
+					if (i & 1)		{E[i] &= ~0xaa;}
+					else			{E[i] &= ~0x44;}
 				}
-				else
-				{
-					E[i] &= ~0x11;
-				}
+				else			{E[i] &= ~0x11;}
 			}
 		} break;
 
 		case 7:
 		{
-			for(i = 0 ; i < E_DrawLength ; i++)
+			for (i = 0 ; i < E_DrawLength ; i++)
 			{
-				if(i & 1)
-				{
-					E[i] &= ~0x11;
-				}
-				else
-				{
-					E[i] &= ~0x44;
-				}
+				if (i & 1)		{E[i] &= ~0x11;}
+				else			{E[i] &= ~0x44;}
 			}
 		} break;
 
 		case 8:
 		{
-			for(i = 0 ; i < E_DrawLength ; i++)
+			for (i = 0 ; i < E_DrawLength ; i++)
 			{
-				if(i & 1)
-				{
-					continue;
-				}
+				if (i & 1)		{continue;}
 				else
 				{
-					if(i & 0x03)
-					{
-						E[i] &= ~0x11;
-					}
-					else
-					{
-						E[i] &= ~0x44;
-					}
+					if (i & 3)		{E[i] &= ~0x11;}
+					else			{E[i] &= ~0x44;}
 				}
 			}
 		} break;
 
 		case 9:
 		{
-			for(i = 0 ; i < E_DrawLength ; i++)
+			for (i = 0 ; i < E_DrawLength ; i++)
 			{
-				if(i & 3)
-				{
-					continue;
-				}
+				if (i & 3)		{continue;}
 				else
 				{
-					if(i & 7)
-					{
-						E[i] &= ~0x11;
-					}
-					else
-					{
-						E[i] &= ~0x44;
-					}
+					if (i & 7)		{E[i] &= ~0x11;}
+					else			{E[i] &= ~0x44;}
 				}
 			}
 		} break;
 	}
 }
 
-static inline void AlphaE_Mode1(uint8_t Layer)
+
+
+
+
+
+static inline void AlphaE_TOP(uint8_t Layer)
 {
-    uint16_t E_DrawLength = E_Layer[Layer].Xsize * E_Layer[Layer].Ysize;
-	uint16_t i;
+    uint16_t i, E_DrawLength;
 	
-	switch(E_Layer[Layer].Alpha)
+	E_DrawLength = E_Layer[Layer].Xsize * E_Layer[Layer].Ysize;
+	switch(E_Layer[Layer].Alpha >> 4)
 	{
 		case 0:
 		{
-			for(i = 0 ; i < E_DrawLength ; i++)
-			{
-				E[i] = 0;
-			}
+			for (i = 0 ; i < E_DrawLength ; i++)	{E[i] = 0;}
 		} break;
 
 		case 1:
 		{
-			for(i = 0 ; i < E_DrawLength ; i++)
-			{
-				E[i] &= 0x01;
-			}
+			for (i = 0 ; i < E_DrawLength ; i++)	{E[i] &= 0x01;}
 		} break;
 
 		case 2:
 		{
-			for(i = 0 ; i < E_DrawLength ; i++)
-			{
-				E[i] &= 0x03;
-			}
+			for (i = 0 ; i < E_DrawLength ; i++)	{E[i] &= 0x03;}
 		} break;
 
 		case 3:
 		{
-			for(i = 0 ; i < E_DrawLength ; i++)
-			{
-				E[i] &= 0x07;
-			}
+			for (i = 0 ; i < E_DrawLength ; i++)	{E[i] &= 0x07;}
 		} break;
 
 		case 4:
 		{
-			for(i = 0 ; i < E_DrawLength ; i++)
-			{
-				E[i] &= 0x0f;
-			}
+			for (i = 0 ; i < E_DrawLength ; i++)	{E[i] &= 0x0f;}
 		} break;
 
 		case 5:
 		{
-			for(i = 0 ; i < E_DrawLength ; i++)
-			{
-				E[i] &= 0x1f;
-			}
+			for (i = 0 ; i < E_DrawLength ; i++)	{E[i] &= 0x1f;}
 		} break;
 
 		case 6:
 		{
-			for(i = 0 ; i < E_DrawLength ; i++)
-			{
-				E[i] &= 0x3f;
-			}
+			for (i = 0 ; i < E_DrawLength ; i++)	{E[i] &= 0x3f;}
 		} break;
 
 		case 7:
 		{
-			for(i = 0 ; i < E_DrawLength ; i++)
-			{
-				E[i] &= 0x7f;
-			}
+			for (i = 0 ; i < E_DrawLength ; i++)	{E[i] &= 0x7f;}
 		} break;
 	}
 }
 
-static inline void AlphaE_Mode2(uint8_t Layer)
+
+
+
+
+
+static inline void AlphaE_BOTTOM(uint8_t Layer)
 {
-    uint16_t E_DrawLength = E_Layer[Layer].Xsize * E_Layer[Layer].Ysize;
-	uint16_t i;
+    uint16_t i, E_DrawLength;
 	
-	switch(E_Layer[Layer].Alpha)
+	E_DrawLength = E_Layer[Layer].Xsize * E_Layer[Layer].Ysize;
+	switch(E_Layer[Layer].Alpha >> 4)
 	{
 		case 0:
 		{
-			for(i = 0 ; i < E_DrawLength ; i++)
-			{
-				E[i] = 0;
-			}
+			for (i = 0 ; i < E_DrawLength ; i++)	{E[i] = 0;}
 		} break;
 
 		case 1:
 		{
-			for(i = 0 ; i < E_DrawLength ; i++)
-			{
-				E[i] &= 0x80;
-			}
+			for (i = 0 ; i < E_DrawLength ; i++)	{E[i] &= 0x80;}
 		} break;
 
 		case 2:
 		{
-			for(i = 0 ; i < E_DrawLength ; i++)
-			{
-				E[i] &= 0xd0;
-			}
+			for (i = 0 ; i < E_DrawLength ; i++)	{E[i] &= 0xd0;}
 		} break;
 
 		case 3:
 		{
-			for(i = 0 ; i < E_DrawLength ; i++)
-			{
-				E[i] &= 0xe0;
-			}
+			for (i = 0 ; i < E_DrawLength ; i++)	{E[i] &= 0xe0;}
 		} break;
 
 		case 4:
 		{
-			for(i = 0 ; i < E_DrawLength ; i++)
-			{
-				E[i] &= 0xf0;
-			}
+			for (i = 0 ; i < E_DrawLength ; i++)	{E[i] &= 0xf0;}
 		} break;
 
 		case 5:
 		{
-			for(i = 0 ; i < E_DrawLength ; i++)
-			{
-				E[i] &= 0xf8;
-			}
+			for (i = 0 ; i < E_DrawLength ; i++)	{E[i] &= 0xf8;}
 		} break;
 
 		case 6:
 		{
-			for(i = 0 ; i < E_DrawLength ; i++)
-			{
-				E[i] &= 0xfc;
-			}
+			for (i = 0 ; i < E_DrawLength ; i++)	{E[i] &= 0xfc;}
 		} break;
 
 		case 7:
 		{
-			for(i = 0 ; i < E_DrawLength ; i++)
-			{
-				E[i] &= 0xfe;
-			}
+			for (i = 0 ; i < E_DrawLength ; i++)	{E[i] &= 0xfe;}
 		} break;
 	}
 }
 
-static inline void AlphaE_Mode3(uint8_t Layer)
+
+
+
+
+
+static inline void AlphaE_LEFT(uint8_t Layer)
 {
 	uint8_t  i;
-	uint16_t j, temp;
+	uint16_t j, Ratio;
 
-	// Alpha / 255 * Xsize
-
-	temp = ((uint16_t)E_Layer[Layer].Xsize * (uint16_t)E_Layer[Layer].Alpha) >> 8;
-	temp = E_Layer[Layer].Xsize - temp;
+	// Alpha / 128 * Xsize
+	Ratio = ((uint16_t)E_Layer[Layer].Xsize * (uint16_t)E_Layer[Layer].Alpha) >> 7;
+	Ratio = (Ratio > E_Layer[Layer].Xsize)?   0 : (E_Layer[Layer].Xsize - Ratio);
 
 	for(i = 0 ; i < E_Layer[Layer].Ysize ; i++)
 	{
-		for(j = 0 ; j < temp ; j++)
+		for(j = 0 ; j < Ratio ; j++)
 		{
 			E[(i+1)*E_Layer[Layer].Xsize - j - 1] = 0;
 		}
 	}
 }
 
-static inline void AlphaE_Mode4(uint8_t Layer)
+
+
+
+
+static inline void AlphaE_RIGHT(uint8_t Layer)
 {
 	uint8_t  i;
-	uint16_t j, temp;
+	uint16_t j, Ratio;
 
-	// Alpha / 255 * Xsize
-
-	temp = ((uint16_t)E_Layer[Layer].Xsize * (uint16_t)E_Layer[Layer].Alpha) >> 8;
-	temp = E_Layer[Layer].Xsize - temp;
+	// Alpha / 128 * Xsize
+	Ratio = ((uint16_t)E_Layer[Layer].Xsize * (uint16_t)E_Layer[Layer].Alpha) >> 7;
+	Ratio = (Ratio > E_Layer[Layer].Xsize)?   0 : (E_Layer[Layer].Xsize - Ratio);
 
 	for(i = 0 ; i < E_Layer[Layer].Ysize ; i++)
 	{
-		for(j = 0 ; j < temp ; j++)
+		for(j = 0 ; j < Ratio ; j++)
 		{
 			E[i*E_Layer[Layer].Xsize + j] = 0;
 		}
 	}
 }
 
+
+
+
+
 void AlphaE(uint8_t Layer)
 {
-    switch(AlphaE_Mode(E_Layer[Layer].Alpha_Fcn))
+    switch(AlphaFcn_GetMode(E_Layer[Layer].Alpha_Fcn))
     {
-        case 0:	{AlphaE_Mode0(Layer);} break;
-        case 1:	{AlphaE_Mode1(Layer);} break;
-        case 2:	{AlphaE_Mode2(Layer);} break;
-        case 3:	{AlphaE_Mode3(Layer);} break;
-        case 4:	{AlphaE_Mode4(Layer);} break;
-        default:{AlphaE_Mode0(Layer);}
+        case AlphaFcn_Mode_UNIFORM:	{AlphaE_UNIFORM(Layer);} break;
+        case AlphaFcn_Mode_TOP:		{AlphaE_TOP(Layer);} break;
+        case AlphaFcn_Mode_BOTTOM:	{AlphaE_BOTTOM(Layer);} break;
+        case AlphaFcn_Mode_LEFT:	{AlphaE_LEFT(Layer);} break;
+        case AlphaFcn_Mode_RIGHT:	{AlphaE_RIGHT(Layer);} break;
+        default:					{AlphaE_UNIFORM(Layer);}
     }
 }

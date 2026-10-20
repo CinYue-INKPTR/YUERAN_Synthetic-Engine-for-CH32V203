@@ -1,12 +1,15 @@
-#include <stdint.h>
 #include "YUERAN_RefrashFRAME.h"
+
+#include <stdint.h>
 #include "YUERAN_Define.h"
-#include "YUERAN_OLEDspi.h"
+#include "OLEDspi.h"
+#include "HardSPI.h"
 
 // Push the full-screen cache FRAME onto the screen
 void RefrashFRAME(uint8_t ClearEN)
 {
     uint8_t i, j;
+
     OLED_Draw_CmdHead_WholeArea();
     for(i = 0 ; i < FRAME_PageSize ; i++)
     {

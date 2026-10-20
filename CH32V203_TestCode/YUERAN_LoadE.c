@@ -1,150 +1,240 @@
-#include <stdint.h>
 #include "YUERAN_LoadE.h"
+
+#include <stdint.h>
 #include "YUERAN_Define.h"
+#include "HardSPI_W25Qxx.h"
+#include "HardSPI.h"
 
-#define FlashReadCmd	0x30
+#define SectorAddr_to_ByteAddr(Dat)	((Dat) << 12)
 
-#define FontAdd_Chr		0
-#define FontAdd_Add		1
+#define Addr_1(Dat)					((uint8_t)((Dat) >> 16))
+#define Addr_2(Dat)					((uint8_t)((Dat) >> 8))
+#define Addr_3(Dat)					((uint8_t)(Dat))
 
-// 字符集起始字符编码，flash字模起始地址
-static const uint32_t FontAdd[][2] =
-{
-	{' ', 0},
-};
+#define BlockCorners_GetMode(Dat)	((Dat) & 0x80)
+#define BlockCorners_BeveledMode	0x80
+#define BlockCorners_RoundedMode	0x00
+#define BlockCorners_GetValue(Dat)	((Dat) & 0x7f)
+
+
+
 
 
 
 static inline void LoadPicture(uint8_t Layer)
 {
-	
+    uint8_t i, j;
+    uint16_t PcrSize;
+    uint32_t BasicAdd, Add;
+
+    PcrSize = E_Layer[Layer].Xsize * E_Layer[Layer].Ysize;
+
+    // Get the basic sector address in flash
+    BasicAdd = ((uint16_t)FlashIndex[E_Layer[Layer].Flash_Item*FlashIndex_Size + FlsIdx_p2_Add] << 8) + FlashIndex[E_Layer[Layer].Flash_Item*FlashIndex_Size + FlsIdx_p2_Add+1];
+
+    Add = (E_Layer[Layer].Picture_Add + E_Layer[Layer].StreamOffset) * PcrSize + SectorAddr_to_ByteAddr(BasicAdd);
+
+    W25Qxx_Start();
+    HardSPI_SwapBytes(W25Qxx_Cmd_ReadData);
+    HardSPI_SwapBytes(Addr_1(Add));
+    HardSPI_SwapBytes(Addr_2(Add));
+    HardSPI_SwapBytes(Addr_3(Add));
+    for (i = 0 ; i < E_Layer[Layer].Ysize ; i++)
+    {
+        for (j = 0 ; j < E_Layer[Layer].Xsize ; j++)
+        {
+            E[i*E_Layer[Layer].Xsize + j] = HardSPI_SwapBytes(0xff);
+        }
+    }
+    W25Qxx_Stop();
 }
+
+
 
 
 
 static inline void LoadChr_ASCII(uint8_t Layer)
 {
-	uint8_t i, j, k, ChrSize, ChrCount;
-//	uint32_t ASCII_Add;
-	// 特性：仅支持一个元素一行字符
-	// 注意：在EtoFRAME中，页与页是对应的，因此加载字模时要按顺序每个字的第1页，然后每个字的第2页……，不能一个字的完整字模紧邻排序
-	// 要先计算可容纳的字数，如果溢出E的存储空间就舍弃多余的字符
-	// 为保证字体的自由度，同时确保不同字体映射显存的对齐，应该把字模加载函数单独开放出来
-	// 用到的资源：
-	// Block_Xsize Ysize Text_Font Text[] Text_Length
-	ChrSize = E_Layer[Layer].Block_Xsize * E_Layer[Layer].Ysize;
-	ChrCount = E_Size / ChrSize;
-	ChrCount = (ChrCount < E_Layer[Layer].Text_Length)? ChrCount : E_Layer[Layer].Text_Length;
+	uint8_t i, j, k, ChrEnableQuantity;
+	uint16_t ChrSize, PageBytes;
+	uint32_t BasicAdd, Add;
 
-	// 1 2 3 4   1 2 3 4
-	for(i = 0 ; i < ChrCount ; i++)
+	// E_Layer[Layer].Block_Xsize_Target: Why use Block_?
+	// - Refer to the comments on the related parameters of the CmdLoad.
+	ChrSize = E_Layer[Layer].Block_Xsize_Target * E_Layer[Layer].Ysize;
+	ChrEnableQuantity = (ChrSize)? (E_Size / ChrSize) : 0;
+	ChrEnableQuantity = (ChrEnableQuantity < E_Layer[Layer].Text_Length)? ChrEnableQuantity : E_Layer[Layer].Text_Length;
+	PageBytes = ChrEnableQuantity * E_Layer[Layer].Block_Xsize_Target;
+	while (PageBytes > 255)
 	{
-//		INKPTR_SPI_Start_Flash();
-//		INKPTR_SPI_SwapByte(FlashReadCmd);
-//		ASCII_Add =
-//			(E_Layer[Layer].Text[i] - FontAdd[E_Layer[Layer].Text_Font][FontAdd_Chr])*ChrSize +
-//			FontAdd[E_Layer[Layer].Text_Font][FontAdd_Add];
-//		INKPTR_SPI_SwapByte((uint8_t)(ASCII_Add >> 16));
-//		INKPTR_SPI_SwapByte((uint8_t)(ASCII_Add >> 8));
-//		INKPTR_SPI_SwapByte((uint8_t)ASCII_Add);
-		for(j = 0 ; j < E_Layer[Layer].Ysize ; j++)
+		PageBytes -= E_Layer[Layer].Block_Xsize_Target;
+		ChrEnableQuantity--;
+	}
+	E_Layer[Layer].Xsize = PageBytes;
+
+	// Get the basic sector address in flash
+	BasicAdd = ((uint16_t)FlashIndex[E_Layer[Layer].Flash_Item*FlashIndex_Size + FlsIdx_p2_Add] << 8) + FlashIndex[E_Layer[Layer].Flash_Item*FlashIndex_Size + FlsIdx_p2_Add+1];
+
+	for (i = 0 ; i < ChrEnableQuantity ; i++)
+	{
+		// Add the address of char in ASCII
+		Add = (E_Layer[Layer].Text[i] - ' ' + E_Layer[Layer].StreamOffset) * ChrSize + SectorAddr_to_ByteAddr(BasicAdd);
+		
+		W25Qxx_Start();
+		HardSPI_SwapBytes(W25Qxx_Cmd_ReadData);
+		HardSPI_SwapBytes(Addr_1(Add));
+		HardSPI_SwapBytes(Addr_2(Add));
+		HardSPI_SwapBytes(Addr_3(Add));
+		for (j = 0 ; j < E_Layer[Layer].Ysize ; j++)
 		{
-			for( k = 0 ; k < E_Layer[Layer].Block_Xsize ; k++)
+			for ( k = 0 ; k < E_Layer[Layer].Block_Xsize_Target ; k++)
 			{
-//				E[j*ChrCount*E_Layer[Layer].Block_Xsize + i*E_Layer[Layer].Block_Xsize + k] = INKPTR_SPI_SwapByte(0xff);
+				E[j*PageBytes + i*E_Layer[Layer].Block_Xsize_Target + k] = HardSPI_SwapBytes(0xff);
 			}
 		}
+		W25Qxx_Stop();
 	}
 }
+
+
 
 
 
 static inline void LoadChr_GB2312(uint8_t Layer)
 {
-	
+    uint8_t i, j, k, ChrEnableQuantity, Text_p;
+    uint16_t ChrSize, PageBytes;
+    uint32_t BasicAdd, Add;
+
+    // E_Layer[Layer].Block_Xsize_Target: Why use Block_?
+	// - Refer to the comments on the related parameters of the CmdLoad.
+	ChrSize = E_Layer[Layer].Block_Xsize_Target * E_Layer[Layer].Ysize;
+    ChrEnableQuantity = (ChrSize)? (E_Size / ChrSize) : 0;
+	if ((E_Layer[Layer].Text_Length / 2) < ChrEnableQuantity)	{ChrEnableQuantity = E_Layer[Layer].Text_Length / 2;}
+    PageBytes = ChrEnableQuantity * E_Layer[Layer].Block_Xsize_Target;
+	while (PageBytes > 255)
+	{
+		PageBytes -= E_Layer[Layer].Block_Xsize_Target;
+		ChrEnableQuantity--;
+	}
+	E_Layer[Layer].Xsize = PageBytes;
+
+    // Get the basic sector address in flash
+    BasicAdd = ((uint16_t)FlashIndex[E_Layer[Layer].Flash_Item*FlashIndex_Size + FlsIdx_p2_Add] << 8) + FlashIndex[E_Layer[Layer].Flash_Item*FlashIndex_Size + FlsIdx_p2_Add+1];
+
+    for(i = 0 ; i < ChrEnableQuantity ; i++)
+    {
+		Text_p = i * 2;
+
+        // Add the address of char in GB2312
+        if ((E_Layer[Layer].Text[Text_p+1] >= 0xa0) && (E_Layer[Layer].Text[Text_p+1] <= 0xff))
+        {
+            // 0xa1a0 ~ 0xa9ff
+            if ((E_Layer[Layer].Text[Text_p] >= 0xa1) && (E_Layer[Layer].Text[Text_p] <= 0xa9))
+            {
+                Add = ((E_Layer[Layer].Text[Text_p] - 0xa1)*(6*16) + (E_Layer[Layer].Text[Text_p+1] - 0xa0) + E_Layer[Layer].StreamOffset) * ChrSize + SectorAddr_to_ByteAddr(BasicAdd);
+            }
+            // 0xb0a0 ~ 0xf7ff
+            else if ((E_Layer[Layer].Text[Text_p] >= 0xb0) && (E_Layer[Layer].Text[Text_p] <= 0xf7))
+            {
+                Add = ((E_Layer[Layer].Text[Text_p] - 0xb0)*(6*16) + (E_Layer[Layer].Text[Text_p+1] - 0xa0) + (9*6*16) + E_Layer[Layer].StreamOffset) * ChrSize + SectorAddr_to_ByteAddr(BasicAdd);
+            }
+			else	{return;}
+        }
+		else	{return;}
+
+        W25Qxx_Start();
+        HardSPI_SwapBytes(W25Qxx_Cmd_ReadData);
+        HardSPI_SwapBytes(Addr_1(Add));
+        HardSPI_SwapBytes(Addr_2(Add));
+        HardSPI_SwapBytes(Addr_3(Add));
+        for(j = 0 ; j < E_Layer[Layer].Ysize ; j++)
+        {
+            for( k = 0 ; k < E_Layer[Layer].Block_Xsize_Target ; k++)
+            {
+                E[j*PageBytes + i*E_Layer[Layer].Block_Xsize_Target + k] = HardSPI_SwapBytes(0xff);
+            }
+        }
+        W25Qxx_Stop();
+    }
 }
+
+
+
 
 
 static inline void LoadDrawBlock(uint8_t Layer)
 {
-	uint8_t i, j, MBy, CornersMode, temp;
+	uint8_t i, j, MBy, MBy_o, CornerValue;
 
-
-	// 计算矩形下边界的偏移值
+	// Get INFO of move bits
 	MBy = E_Layer[Layer].Block_Ysize % 8;
+	MBy_o = (MBy)? (8 - MBy) : 0;
 	E_Layer[Layer].Ysize = (MBy)? (E_Layer[Layer].Block_Ysize / 8 + 1) : (E_Layer[Layer].Block_Ysize / 8);
 	E_Layer[Layer].Xsize = E_Layer[Layer].Block_Xsize;
-	temp = (MBy)? (8- MBy) : 0;
 
-	// 填充整个矩形区域
-	for(i = 0 ; i < E_Layer[Layer].Ysize ; i++)
+	// Fill the whole area of block
+	for (i = 0 ; i < E_Layer[Layer].Ysize ; i++)
 	{
-		for(j = 0 ; j < E_Layer[Layer].Block_Xsize ; j++)
+		for (j = 0 ; j < E_Layer[Layer].Block_Xsize ; j++)
 		{
 			E[i*E_Layer[Layer].Block_Xsize + j] = 0xff;
 		}
 	}
 
-	// 根据实际偏移值裁切矩形下边界得到原始矩形
-	for(i = 0 ; i < E_Layer[Layer].Block_Xsize ; i++)
+	// Cut the bottom of block
+	for (i = 0 ; i < E_Layer[Layer].Block_Xsize ; i++)
 	{
-		E[(E_Layer[Layer].Ysize - 1)*E_Layer[Layer].Block_Xsize + i] &= 0xff >> temp;
+		E[(E_Layer[Layer].Ysize - 1)*E_Layer[Layer].Block_Xsize + i] &= 0xff >> MBy_o;
 	}
 
-	// 根据模式修剪矩形圆角/切角
-	CornersMode = E_Layer[Layer].Block_Corners & 0x7f;
-	if(CornersMode)
+	// Operate corners
+	CornerValue = BlockCorners_GetValue(E_Layer[Layer].Block_Corners);
+	if(CornerValue == 0)	{return;}
+
+	switch (BlockCorners_GetMode(E_Layer[Layer].Block_Corners))
 	{
-		if(E_Layer[Layer].Block_Corners & 0x80)
+		case BlockCorners_BeveledMode:
 		{
-			// 矩形切角
-			for(i = 0 ; (i < E_Layer[Layer].Block_Xsize) && (i < 8) ; i++)
+			for (i = 0 ; (i < E_Layer[Layer].Block_Xsize) && (i < B_Corners_Mask_LevelQuantity) ; i++)
 			{
-				// 修剪矩形元素第一页的两个顶角
-				E[i]							&= B_Corners_Mask[CornersMode - 1][i];
-				E[E_Layer[Layer].Block_Xsize - i - 1]	&= B_Corners_Mask[CornersMode - 1][i];
+				// Operate the first page.
+				E[i]									&= B_Corners_Mask[CornerValue - 1][i];
+				E[E_Layer[Layer].Block_Xsize - 1 - i]	&= B_Corners_Mask[CornerValue - 1][i];
 
-				// 修剪矩形元素最后一页的两个底角
-				E[(E_Layer[Layer].Ysize - 1)*E_Layer[Layer].Block_Xsize + i] &=
-					B_Corners_Mask[CornersMode - 1 + 8][i] >> temp;
-				E[E_Layer[Layer].Ysize*E_Layer[Layer].Block_Xsize - i - 1] &=
-					B_Corners_Mask[CornersMode - 1 + 8][i] >> temp;
+				// Operate the last page.
+				E[(E_Layer[Layer].Ysize - 1)*E_Layer[Layer].Block_Xsize + i] &= B_Corners_Mask[CornerValue - 1 + B_Corners_Mask_LevelQuantity][i] >> MBy_o;
+				E[E_Layer[Layer].Ysize*E_Layer[Layer].Block_Xsize - 1 - i] &= B_Corners_Mask[CornerValue - 1 + B_Corners_Mask_LevelQuantity][i] >> MBy_o;
 
-				// 如果矩形不止 1 页高，最后一页的前一页也要裁切角
+				// If the hight of block takes moer than 1 paind of the last one should be operated.
 				if((E_Layer[Layer].Ysize > 1) && MBy)
 				{
-					E[(E_Layer[Layer].Ysize - 2)*E_Layer[Layer].Block_Xsize + i] &=
-						(B_Corners_Mask[CornersMode - 1 + 8][i] << MBy) | (0xff >> temp);
-					E[(E_Layer[Layer].Ysize - 1)*E_Layer[Layer].Block_Xsize - i - 1] &=
-						(B_Corners_Mask[CornersMode - 1 + 8][i] << MBy) | (0xff >> temp);
+					E[(E_Layer[Layer].Ysize - 2)*E_Layer[Layer].Block_Xsize + i] &= (B_Corners_Mask[CornerValue - 1 + B_Corners_Mask_LevelQuantity][i] << MBy) | (0xff >> MBy_o);
+					E[(E_Layer[Layer].Ysize - 1)*E_Layer[Layer].Block_Xsize - 1 - i] &= (B_Corners_Mask[CornerValue - 1 + B_Corners_Mask_LevelQuantity][i] << MBy) | (0xff >> MBy_o);
 				}
 			}
-		}
-		else
+		} break;
+
+		case BlockCorners_RoundedMode:
 		{
-			// 矩形圆角
-			for(i = 0 ; (i < E_Layer[Layer].Block_Xsize) && (i < 8) ; i++)
+			for(i = 0 ; (i < E_Layer[Layer].Block_Xsize) && (i < R_Corners_Mask_LevelQuantity) ; i++)
 			{
-				// 修剪矩形元素第一页的两个顶角
-				E[i]							&= R_Corners_Mask[CornersMode - 1][i];
-				E[E_Layer[Layer].Block_Xsize - i - 1]	&= R_Corners_Mask[CornersMode - 1][i];
+				// Operate the first page.
+				E[i]									&= R_Corners_Mask[CornerValue - 1][i];
+				E[E_Layer[Layer].Block_Xsize - i - 1]	&= R_Corners_Mask[CornerValue - 1][i];
 
-				// 修剪矩形元素最后一页的两个底角
-				E[(E_Layer[Layer].Ysize - 1)*E_Layer[Layer].Block_Xsize + i] &=
-					R_Corners_Mask[CornersMode - 1 + 6][i] >> temp;
-				E[E_Layer[Layer].Ysize*E_Layer[Layer].Block_Xsize - i - 1] &=
-					R_Corners_Mask[CornersMode - 1 + 6][i] >> temp;
+				// Operate the last page.
+				E[(E_Layer[Layer].Ysize - 1)*E_Layer[Layer].Block_Xsize + i] &= R_Corners_Mask[CornerValue - 1 + R_Corners_Mask_LevelQuantity][i] >> MBy_o;
+				E[E_Layer[Layer].Ysize*E_Layer[Layer].Block_Xsize - i - 1] &= R_Corners_Mask[CornerValue - 1 + R_Corners_Mask_LevelQuantity][i] >> MBy_o;
 
-				// 如果矩形不止 1 页高，最后一页的前一页也要裁切角
+				// If the hight of block takes moer than 1 page, the page behind of the last one should be operated.
 				if((E_Layer[Layer].Ysize > 1) && MBy)
 				{
-					E[(E_Layer[Layer].Ysize - 2)*E_Layer[Layer].Block_Xsize + i] &=
-						(R_Corners_Mask[CornersMode - 1 + 6][i] << MBy) | (0xff >> temp);
-					E[(E_Layer[Layer].Ysize - 1)*E_Layer[Layer].Block_Xsize - i - 1] &=
-						(R_Corners_Mask[CornersMode - 1 + 6][i] << MBy) | (0xff >> temp);
+					E[(E_Layer[Layer].Ysize - 2)*E_Layer[Layer].Block_Xsize + i] &= (R_Corners_Mask[CornerValue - 1 + 6][i] << MBy) | (0xff >> MBy_o);
+					E[(E_Layer[Layer].Ysize - 1)*E_Layer[Layer].Block_Xsize - i - 1] &= (R_Corners_Mask[CornerValue - 1 + 6][i] << MBy) | (0xff >> MBy_o);
 				}
 			}
-		}
+		} break;
 	}
 }
 
@@ -156,9 +246,9 @@ void LoadE(uint8_t Layer)
 {
 	switch(E_Layer[Layer].Type)
 	{
-		case 1: {LoadPicture(Layer);}	break;
-		case 2:	{LoadChr_ASCII(Layer);}	break;
-		case 3:	{LoadChr_GB2312(Layer);}break;
-		case 4:	{LoadDrawBlock(Layer);}	break;
+		case Type_Picture: 		{LoadPicture(Layer);} break;
+		case Type_ASCIIchr:		{LoadChr_ASCII(Layer);} break;
+		case Type_GB2312chr:	{LoadChr_GB2312(Layer);} break;
+		case Type_DrawBlock:	{LoadDrawBlock(Layer);} break;
 	}
 }

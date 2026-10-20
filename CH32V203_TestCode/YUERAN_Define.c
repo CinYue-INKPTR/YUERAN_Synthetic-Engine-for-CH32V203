@@ -1,22 +1,24 @@
-#include <stdint.h>
 #include "YUERAN_Define.h"
+
+#include "ch32v20x.h"
 
 Element E_Layer[E_Layer_Size] = {0};
 uint8_t FRAME[FRAME_PageSize][FRAME_ListSize] = {0};
 uint8_t E[E_Size] = {0};
-uint8_t FRAME_ClnFlag = 1;
+uint16_t RenderingTime = 0;
 
-uint8_t RenderCmd[RenderCmd_Size];
-uint8_t RenderCmd_Sequence = 0xff;
+uint8_t FlashIndex[FlashIndex_Quantity * FlashIndex_Size] = {0};
+uint8_t FlashIndex_CNT = 0;
 
-// Sequence marking and Xpos, Ypos, Alpha, Block_Xsize, Block_Ysize (for 8 layers)
-uint8_t BackData[BackData_Size];
+uint8_t TEST_VALUE[16];
 
-uint8_t USART2_BUFFER[USART2_BUFFER_Size];
-uint16_t USART2_RxLen = 0;
-uint8_t USART2_RxFlag = 0;
+volatile uint8_t USART_BUFFER[USART_BUFFER_Size] = {0};
+volatile uint8_t USART_BUFFER_CNT = 0;
+volatile uint8_t USART_BUFFER_TomeoutCNT = 0;
+uint8_t USART_BackData[USART_BackData_Size] = {0};
+uint8_t BackData_Head = 0xff;
 
-uint16_t Developer_FrameRenderingTime;
+volatile uint8_t GlobalFlag = GlobalFlag_RenderingMode | GlobalFlag_FrameClr | GlobalFlag_WaitRendering;
 
 const uint8_t R_Corners_Mask[12][8] =
 {
@@ -34,6 +36,7 @@ const uint8_t R_Corners_Mask[12][8] =
     {0x01, 0x07, 0x1f, 0x3f, 0x3f, 0x7f, 0x7f, 0xff},
     {0x00, 0x03, 0x0f, 0x1f, 0x3f, 0x3f, 0x7f, 0x7f}
 };
+
 
 const uint8_t B_Corners_Mask[16][8] =
 {
@@ -55,3 +58,12 @@ const uint8_t B_Corners_Mask[16][8] =
     {0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f, 0xff},
     {0x00, 0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f},
 };
+
+
+
+
+
+void NVIC_Interrupt_GroupInit(void)
+{
+    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
+}
