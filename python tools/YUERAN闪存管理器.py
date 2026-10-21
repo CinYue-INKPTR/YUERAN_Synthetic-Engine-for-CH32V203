@@ -53,7 +53,7 @@ INDEX_SECTOR_COUNT = 2
 INDEX_TOTAL = INDEX_SECTOR_COUNT * SECTOR_SIZE      # 8192
 SLOT = 16                                           # 索引单位长度
 DATA_FIRST_SECTOR = INDEX_SECTOR_COUNT              # 数据区从扇区 2 开始
-MAX_FILES = 64
+MAX_FILES = 128
 READ_CHUNK = 128                                    # 单条 R 指令最多 128 字节
 WRITE_CHUNK = 128                                   # 单条 W 指令最大数据长度 128 字节
 
@@ -343,7 +343,7 @@ def parse_index(raw):
     与固件 W25Qxx_GetIndex 的扫描方式一致：以 16 字节为步长扫描，记录
     读到 0x00 的最大地址作为有效表头；扇区 0 内遇到 0xFF 空段直接跳到
     扇区 1 继续找，扇区 1 内遇到 0xFF 空段结束扫描。
-    从表头后一个单位开始读文件索引，最多 64 个，遇到 0xFF 结束，越过
+    从表头后一个单位开始读文件索引，最多 128 个，遇到 0xFF 结束，越过
     8192 时回绕到 0 继续读。
     """
     if len(raw) < INDEX_TOTAL:
@@ -786,7 +786,7 @@ class FlashTool(object):
     def modify_file(self, ctx, row, old_name, name, xsize, y_pages):
         self._require_ready()
         p = ctx.begin([("重新寻表", float(INDEX_TOTAL)),
-                       ("写入新索引表", 1040 * COST_WRITE),
+                       ("写入新索引表", ((MAX_FILES + 1) * SLOT) * COST_WRITE),
                        ("擦除旧索引扇区", 1.0),
                        ("刷新文件表", float(INDEX_TOTAL))])
 
@@ -810,7 +810,7 @@ class FlashTool(object):
     def delete_file(self, ctx, row, old_name):
         self._require_ready()
         p = ctx.begin([("重新寻表", float(INDEX_TOTAL)),
-                       ("写入新索引表", 1040 * COST_WRITE),
+                       ("写入新索引表", ((MAX_FILES + 1) * SLOT) * COST_WRITE),
                        ("擦除旧索引扇区", 1.0),
                        ("擦除文件数据区", 1.0),
                        ("刷新文件表", float(INDEX_TOTAL))])
@@ -837,7 +837,7 @@ class FlashTool(object):
     def move_file(self, ctx, row, old_name):
         self._require_ready()
         p = ctx.begin([("重新寻表", float(INDEX_TOTAL)),
-                       ("写入新索引表", 1040 * COST_WRITE),
+                       ("写入新索引表", ((MAX_FILES + 1) * SLOT) * COST_WRITE),
                        ("擦除旧索引扇区", 1.0),
                        ("复制文件数据", 1.0),
                        ("擦除原数据区", 1.0),
