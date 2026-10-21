@@ -19,7 +19,6 @@
 #define FrameClear_F        0xc0
 #define LowPower_F          0xd0
 #define ScreenSet_F         0xe0
-#define SwitchMode_F        0xf0
 #define GetCmdLayer(Dat)    ((Dat) & 0x0f)
 #define GetCmdValue(Dat)    ((Dat) & 0x0f)
 
@@ -437,25 +436,6 @@ static inline uint8_t FrameClear(uint8_t* ReadPoint)
 
 
 
-static inline uint8_t SwitchMode(uint8_t* ReadPoint)
-{
-    uint8_t i;
-
-    if (USART_BUFFER_Size <= (*ReadPoint + 3))  {return 1;}
-
-    for (i = 0 ; i < 3 ; i++)
-    {
-        if (USART_BUFFER[*ReadPoint + i] != 0xf0)       {return 1;}
-    }
-
-    GlobalFlag &= ~GlobalFlag_RenderingMode;
-    return 0;
-}
-
-
-
-
-
 static inline uint8_t LowPower(uint8_t* ReadPoint)
 {
     uint8_t i;
@@ -531,7 +511,6 @@ void RenderCmdLoad(void)
             case FrameClear_F:          {LoadCheck = FrameClear(&ReadPoint);} break;
             case LowPower_F:            {LoadCheck = LowPower(&ReadPoint);} break;
             case ScreenSet_F:           {LoadCheck = ScreenSet(&ReadPoint);} break;
-            case SwitchMode_F:          {LoadCheck = SwitchMode(&ReadPoint);} break;
             default:                    {LoadCheck = 1;}
         }
         if (LoadCheck)  {break;}

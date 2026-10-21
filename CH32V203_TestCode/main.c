@@ -16,6 +16,23 @@
 #include "YUERAN_CmdLoad.h"
 #include "YUERAN_Backstage.h"
 
+#define ModePin_Port	GPIOA
+#define ModePin_Pin		GPIO_Pin_1
+
+
+
+
+void ModePin_Init(void)
+{
+	GPIO_InitTypeDef GPIO_InitStructure;
+
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+	GPIO_InitStructure.GPIO_Pin = ModePin_Pin;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+	GPIO_Init(ModePin_Port, &GPIO_InitStructure);
+}
+
 
 
 
@@ -31,6 +48,7 @@ int main(void)
     HardSPI_Init();
     W25Qxx_Init();
     OLED_Init(OLED_AddressingMode_HorizontalMode, OLED_SetMode_X_Flip_Normal, OLED_SetMode_Y_Flip_Normal, OLED_SetMode_Color_Normal, 255);
+	ModePin_Init();
 
 	if (PWR_GetFlagStatus(PWR_FLAG_SB) == SET)	{LowPower_WKUP();}
 
@@ -41,7 +59,7 @@ int main(void)
 
     while(1)
     {
-		if (GlobalFlag & GlobalFlag_RenderingMode)
+		if (GPIO_ReadInputDataBit(ModePin_Port, ModePin_Pin) == RESET)
 		{
 			uint8_t i;
 			
@@ -78,7 +96,7 @@ int main(void)
 		{
 			HardSPI_SpeedChoose(HardSPI_Speed_Flash);
 			USART_SwitchTo(2);
-			Backstage();
+			while (GPIO_ReadInputDataBit(ModePin_Port, ModePin_Pin) == SET)	{Backstage();}
 			USART_SwitchTo(1);
 			W25Qxx_GetIndex();
 		}

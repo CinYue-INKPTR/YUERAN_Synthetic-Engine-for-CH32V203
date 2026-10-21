@@ -18,7 +18,7 @@ volatile uint8_t USART_BUFFER_TomeoutCNT = 0;
 uint8_t USART_BackData[USART_BackData_Size] = {0};
 uint8_t BackData_Head = 0xff;
 
-volatile uint8_t GlobalFlag = GlobalFlag_RenderingMode | GlobalFlag_FrameClr | GlobalFlag_WaitRendering;
+volatile uint8_t GlobalFlag = GlobalFlag_FrameClr | GlobalFlag_WaitRendering;
 
 const uint8_t R_Corners_Mask[12][8] =
 {

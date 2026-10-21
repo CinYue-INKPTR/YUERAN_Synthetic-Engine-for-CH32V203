@@ -16,6 +16,7 @@
 #define SrmAtb_GetCirF(Dat)         ((Dat) & 0x4000)
 #define SrmAtb_GetStpLen(Dat)       (((Dat) >> 7) & 0x7f)
 #define SrmAtb_GetFrzVlu(Dat)       ((Dat) & 0x7f)
+#define SrmAtb_FrzVlu_Mask          0x7f
 
 #define SrmPus_FrzVlu_Mask          0x7f
 #define SrmPus_GetPusF(Dat)         ((Dat) & 0x80)
@@ -203,6 +204,9 @@ static inline void FcnE_Stream(uint8_t Layer)
 
     if (SrmPus_GetPusF(E_Layer[Layer].Stream_Pause))    {return;}
 
+    srm_step = SrmAtb_GetStpLen(E_Layer[Layer].Stream_Attributes);
+
+
     if (SrmPus_GetFrzVlu(E_Layer[Layer].Stream_Pause) < SrmAtb_GetFrzVlu(E_Layer[Layer].Stream_Attributes))
     {
         E_Layer[Layer].Stream_Pause++;
@@ -210,14 +214,18 @@ static inline void FcnE_Stream(uint8_t Layer)
     }
     E_Layer[Layer].Stream_Pause &= ~SrmPus_FrzVlu_Mask;
 
-    srm_step = SrmAtb_GetStpLen(E_Layer[Layer].Stream_Attributes);
 
     if (SrmAtb_GetCirF(E_Layer[Layer].Stream_Attributes))
     {
-        E_Layer[Layer].StreamAdd = (E_Layer[Layer].StreamAdd < E_Layer[Layer].StreamAdd_Target)? (E_Layer[Layer].StreamAdd + 1) : 0;
-
-        if(SrmAtb_GetDirF(E_Layer[Layer].Stream_Attributes))    {E_Layer[Layer].StreamOffset = -(E_Layer[Layer].StreamAdd*srm_step);}
-        else                                                    {E_Layer[Layer].StreamOffset = E_Layer[Layer].StreamAdd*srm_step;}
+        if (SrmAtb_GetDirF(E_Layer[Layer].Stream_Attributes))
+        {
+            E_Layer[Layer].StreamAdd = (E_Layer[Layer].StreamAdd)? (E_Layer[Layer].StreamAdd - 1) : E_Layer[Layer].StreamAdd_Target;
+        }
+        else
+        {
+            E_Layer[Layer].StreamAdd = (E_Layer[Layer].StreamAdd < E_Layer[Layer].StreamAdd_Target)? (E_Layer[Layer].StreamAdd + 1) : 0;
+        }
+        E_Layer[Layer].StreamOffset = E_Layer[Layer].StreamAdd*srm_step;
         return;
     }
 

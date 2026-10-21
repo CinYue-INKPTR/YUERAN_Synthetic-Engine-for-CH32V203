@@ -5,7 +5,6 @@
 #include "ch32v20x.h"
 
 #define TIM_PRESCALER    (SystemCoreClock / 1000000)
-#define TIM_PERIOD       20000
 
 void TIM_Init(void);
 

@@ -3,6 +3,12 @@
 
 #include "ch32v20x.h"
 
+// Frame time(US)
+#define TIM_PERIOD      20000
+
+// StreamFreeze: Function
+#define SrmFcnFrz_Max   500/(TIM_PERIOD/1000) - 1
+
 // Type
 #define Type_Disable    0
 #define Type_Picture    1
@@ -23,7 +29,7 @@
 
 // Flash index
 #define FlashIndex_Size     16
-#define FlashIndex_Quantity 64
+#define FlashIndex_Quantity 128
 
 #define FlsIdx_p10_Name		0
 #define FlsIdx_p2_DataSize	10
@@ -41,12 +47,11 @@
 #define USART_BUFFER_Size           256
 #define USART_BackData_Size         256
 
-#define GlobalFlag_RenderingMode	0x80
-#define GlobalFlag_WaitRendering	0x40
-#define GlobalFlag_TimeFull         0x20
-#define GlobalFlag_FrameClr		    0x10
-#define GlobalFlag_USART_CmdIn      0x08
-#define GlobalFlag_USART_CmdFn      0x04
+#define GlobalFlag_WaitRendering	0x80
+#define GlobalFlag_TimeFull         0x40
+#define GlobalFlag_FrameClr		    0x20
+#define GlobalFlag_USART_CmdIn      0x10
+#define GlobalFlag_USART_CmdFn      0x08
 
 #define Pipeline_AlphaE     0x80
 
