@@ -3,12 +3,13 @@
 
 按 YUERAN_CmdLoad.c 的解析规则，逐条构造渲染模式指令。
 渲染口：USART1，115200 8N1。
+渲染/闪存模式由模式引脚电平决定，不再通过串口指令切换。
 
 数据包：0xAB + 包长度(1) + 指令数(1) + 指令数据
     包长度 = 3 + 指令数据总长度（含 3 字节包头）
 
 需要校验的指令：末字节 = 该字节之前所有字节之和的低 8 位。
-FrameClear / ScreenSet / SwitchMode 不用校验和，而是要求指令的 3 个字节相同。
+FrameClear / ScreenSet 不用校验和，而是要求指令的 3 个字节相同。
 
 渲染模式没有逐条应答，单片机会持续通过 USART1 上报图层状态：
     1 字节 BackData_Head + 16 个图层 × 7 字节 + 1 字节性能占用（BCD）
@@ -244,11 +245,6 @@ def cmd_screen_set(bits):
     """ScreenSet(0xE0)：3 个字节必须相同"""
     v = 0xE0 | (_b(bits) & 0x0F)
     return bytes([v, v, v])
-
-
-def cmd_switch_mode():
-    """SwitchMode(0xF0)：退出渲染模式，切换到 USART2 闪存模式"""
-    return bytes([0xF0, 0xF0, 0xF0])
 
 
 # ============================== 串口层 ==============================
@@ -935,23 +931,10 @@ class LowPowerPage(CommandPage):
         super(LowPowerPage, self).send()
 
 
-class SwitchModePage(CommandPage):
-    title = "切换闪存模式"
-    uses_checksum = False
-    hint = ("SwitchMode(0xF0)：发送 F0 F0 F0，退出渲染模式。"
-            "随后 USART1 关闭、USART2 打开，本工具不会再收到渲染上报。")
-
-    def _build_fields(self):
-        pass
-
-    def build_command(self):
-        return cmd_switch_mode()
-
-
 PAGE_CLASSES = (
     DisablePage, DisableAllPage, PicturePage, AsciiPage, Gb2312Page, BlockPage,
     LayerBasePage, StreamSetPage, StreamValuePage, StreamPausePage,
-    BlockValuePage, FrameClearPage, ScreenSetPage, LowPowerPage, SwitchModePage,
+    BlockValuePage, FrameClearPage, ScreenSetPage, LowPowerPage,
 )
 
 
@@ -1005,7 +988,7 @@ class MainWindow(QtWidgets.QMainWindow):
         note = QtWidgets.QLabel(
             "说明：渲染模式没有逐条应答，单片机会持续通过 USART1 上报图层状态；"
             "带校验的指令末字节为前面所有字节之和的低 8 位，"
-            "帧清除/屏幕设置/模式切换则要求 3 个字节相同。")
+            "帧清除/屏幕设置则要求 3 个字节相同。")
         note.setWordWrap(True)
         note.setStyleSheet("color:#555;")
         root.addWidget(note)
@@ -1136,16 +1119,16 @@ class MainWindow(QtWidgets.QMainWindow):
         head = data["head"]
         head_text = {0xFF: "正常", 0x00: "指令执行成功", 0xF0: "指令被拒绝"}
         self.telem_status.setText(
-            "回传正常：帧数 %d，性能占用 %s，BackData_Head=0x%02X（%s），更新 %s"
+            "回传正常：帧数 %d，性能占用 %s，BackData_Head=0x%02X（%s）"
             % (self.tele_frames, data["perf_text"], head,
-               head_text.get(head, "未知"), now_text()))
+               head_text.get(head, "未知")))
         for i, layer in enumerate(data["layers"]):
             self._set_tele_cell(i, 1, str(layer["x"]))
             self._set_tele_cell(i, 2, str(layer["y"]))
             self._set_tele_cell(i, 3, str(layer["alpha"]))
             self._set_tele_cell(i, 4, str(layer["bx"]))
             self._set_tele_cell(i, 5, str(layer["by"]))
-            self._set_tele_cell(i, 6, "0x%04X" % layer["stream"])
+            self._set_tele_cell(i, 6, str(layer["stream"]))
 
     # ---------- 自动化清单 ----------
     def _build_automation_page(self):

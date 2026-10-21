@@ -2,12 +2,12 @@
 """YUERAN 闪存管理器（W25QXX）
 
 通过 230400 串口（8N1，普通模式）管理设备上的 W25QXX 闪存。
+渲染/闪存模式由单片机模式引脚电平决定，本工具只负责 USART2 闪存模式下的操作。
 
 设备端协议（与固件 YUERAN 工程对齐）：
     串口数据包：0xAB + 包长度(1) + 指令数(1) + 指令数据
         包长度 = 3 + 指令数据长度（包含 3 字节包头），指令数固定为 1
     指令数据：
-    0F 0F 0F                                    退出闪存模式
     "INFO"                                      返回 2 字节扇区数（高字节在前）
     'R' + 字节地址(3) + 长度(2) + 校验(1)        返回指定长度数据（不回完成标记）
     'W' + 字节地址(3) + 长度(1) + 校验(1) + 数据 写入数据（<=128 字节）
@@ -216,9 +216,6 @@ class SerialLink(object):
         return self._collect_done(timeout, progress_cb, what)
 
     # ---------- 设备指令 ----------
-    def exit_flash_mode(self):
-        self._cmd_done(b"\x0f\x0f\x0f", 6.0, what="退出闪存模式")
-
     def info(self):
         payload = self._cmd_done(b"INFO", 6.0, what="INFO")
         if len(payload) < 2:
@@ -925,16 +922,6 @@ class FlashTool(object):
         p.finish()
         return "闪存已格式化，索引表头已建立在扇区 0 的 0x000000"
 
-    def exit_flash_mode(self, ctx):
-        self._require_open()
-        p = ctx.begin([("退出闪存模式", 1.0)])
-        p.enter(0)
-        ctx.log("发送 0F 0F 0F 退出闪存模式")
-        self.link.exit_flash_mode()
-        p.frac(0, 1.0)
-        p.finish()
-        return "设备已返回渲染模式"
-
 
 # ============================== 后台任务线程 ==============================
 class Worker(QtCore.QThread):
@@ -1324,8 +1311,6 @@ class MainWindow(QtWidgets.QMainWindow):
         ctrl.addSpacing(3)
         self.btn_format = self._ctrl_button(ctrl, "格式化芯片")
         self.btn_sector = self._ctrl_button(ctrl, "扇区查看")
-        ctrl.addSpacing(3)
-        self.btn_exit = self._ctrl_button(ctrl, "退出闪存模式")
         mid.addWidget(ctrl_box, 1)
 
         right = QtWidgets.QVBoxLayout()
@@ -1419,7 +1404,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.btn_delete.clicked.connect(self.op_delete_file)
         self.btn_format.clicked.connect(self.op_format)
         self.btn_sector.clicked.connect(self.op_sector_view)
-        self.btn_exit.clicked.connect(self.op_exit_flash)
         self.btn_copy_log.clicked.connect(self.copy_log)
         self.btn_clear_log.clicked.connect(self.log_edit.clear)
         self.table.itemSelectionChanged.connect(self.update_actions)
@@ -1487,7 +1471,6 @@ class MainWindow(QtWidgets.QMainWindow):
             btn.setEnabled(ready)
         for btn in (self.btn_modify, self.btn_move, self.btn_export, self.btn_delete):
             btn.setEnabled(ready and has_sel)
-        self.btn_exit.setEnabled(connected and not self.busy)
 
         if connected:
             self.lbl_conn.setText("已连接：%s" % self.port_combo.currentData())
@@ -1679,9 +1662,6 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         dlg = SectorDialog(self.tool, self)
         dlg.exec_()
-
-    def op_exit_flash(self):
-        self.start_task("退出闪存模式", lambda ctx: self.tool.exit_flash_mode(ctx))
 
     def _selected_file(self):
         row = self.table.currentRow()
