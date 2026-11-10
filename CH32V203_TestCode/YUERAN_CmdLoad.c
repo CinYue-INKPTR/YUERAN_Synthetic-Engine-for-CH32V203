@@ -3,7 +3,6 @@
 #include "ch32v20x.h"
 #include "YUERAN_Define.h"
 #include "OLEDspi.h"
-#include "LowPower.h"
 
 
 
@@ -17,7 +16,6 @@
 #define BlockValue_F        0x50
 #define DisableAllLayer_F   0xa0
 #define FrameClear_F        0xc0
-#define LowPower_F          0xd0
 #define ScreenSet_F         0xe0
 #define GetCmdLayer(Dat)    ((Dat) & 0x0f)
 #define GetCmdValue(Dat)    ((Dat) & 0x0f)
@@ -127,6 +125,53 @@
 
 
 
+static inline uint8_t ElementOperation(uint8_t* ReadPoint);
+static inline uint8_t LayerBaseValue(uint8_t* ReadPoint);
+static inline uint8_t StreamSet(uint8_t* ReadPoint);
+static inline uint8_t StreamValue(uint8_t* ReadPoint);
+static inline uint8_t StreamPause(uint8_t* ReadPoint);
+static inline uint8_t BlockValue(uint8_t* ReadPoint);
+static inline uint8_t DisableAllLayer(uint8_t* ReadPoint);
+static inline uint8_t FrameClear(uint8_t* ReadPoint);
+static inline uint8_t ScreenSet(uint8_t* ReadPoint);
+void RenderCmdLoad(void)
+{
+    uint8_t CmdCount, ReadPoint = USART_BUFFER_CmdData_p, i, LoadCheck;
+
+    CmdCount = USART_BUFFER[USART_BUFFER_CmdNum_p];
+    if (CmdCount == 0)
+    {
+        USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
+        return;
+    }
+
+    for (i = 0 ; i < CmdCount ; i++)
+    {
+        switch (GetCmdFlag(USART_BUFFER[ReadPoint]))
+        {
+            case ElementOperation_F:    {LoadCheck = ElementOperation(&ReadPoint);} break;
+            case LayerBaseValue_F:      {LoadCheck = LayerBaseValue(&ReadPoint);} break;
+            case StreamSet_F:           {LoadCheck = StreamSet(&ReadPoint);} break;
+            case StreamValue_F:         {LoadCheck = StreamValue(&ReadPoint);} break;
+            case StreamPause_F:         {LoadCheck = StreamPause(&ReadPoint);} break;
+            case BlockValue_F:          {LoadCheck = BlockValue(&ReadPoint);} break;
+            case DisableAllLayer_F:     {LoadCheck = DisableAllLayer(&ReadPoint);} break;
+            case FrameClear_F:          {LoadCheck = FrameClear(&ReadPoint);} break;
+            case ScreenSet_F:           {LoadCheck = ScreenSet(&ReadPoint);} break;
+            default:                    {LoadCheck = 1;}
+        }
+        if (LoadCheck)  {break;}
+    }
+    if (LoadCheck)  {BackData_Head = 0xf0;}
+    else            {BackData_Head = 0x00;}
+
+    USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
+}
+
+
+
+
+
 static inline uint8_t CmdChecker(uint8_t ReadPoint, uint8_t CheckByte_p)
 {
     uint8_t i, Check = 0;
@@ -151,12 +196,12 @@ static inline uint8_t ElementOperation(uint8_t* ReadPoint)
 	// Char
     if ((USART_BUFFER[*ReadPoint + ElmOpr_Gp1_Type] == Type_ASCIIchr) || (USART_BUFFER[*ReadPoint + ElmOpr_Gp1_Type] == Type_GB2312chr))
     {
-        if (USART_BUFFER_Size <= (*ReadPoint + ElmOpr_p1_Chr_Check + USART_BUFFER[*ReadPoint + ElmOpr_p1_Chr_TxtLen])) {return 1;}
-        if (CmdChecker(*ReadPoint, ElmOpr_p1_Chr_Check) &&
-          (Text_ByteLength >= USART_BUFFER[*ReadPoint + ElmOpr_p1_Chr_TxtLen]))                                        {return 1;}
+        if (USART_BUFFER_Size <= (*ReadPoint + ElmOpr_p1_Chr_Check + USART_BUFFER[*ReadPoint + ElmOpr_p1_Chr_TxtLen]))  {return 1;}
+        if (CmdChecker(*ReadPoint, ElmOpr_p1_Chr_Check) ||
+          (USART_BUFFER[*ReadPoint + ElmOpr_p1_Chr_TxtLen] > Text_ByteLength))                                          {return 1;}
 
         ItemTemp = USART_BUFFER[*ReadPoint + ElmOpr_p1_Chr_FlsIdx];
-        if (ItemTemp > FlashIndex_CNT)  {return 1;}
+        if (ItemTemp >= FlashIndex_CNT)  {return 1;}
 
         E_Layer[Layer].Type         = USART_BUFFER[*ReadPoint + ElmOpr_Gp1_Type];
         E_Layer[Layer].PipelineFlag = USART_BUFFER[*ReadPoint + ElmOpr_p1_Chr_Piplin];
@@ -212,7 +257,7 @@ static inline uint8_t ElementOperation(uint8_t* ReadPoint)
 		    if (CmdChecker(*ReadPoint, ElmOpr_p1_Pcr_Check))                {return 1;}
 
 		    ItemTemp = USART_BUFFER[*ReadPoint + ElmOpr_p1_Chr_FlsIdx];
-            if (ItemTemp > FlashIndex_CNT)  {return 1;}
+            if (ItemTemp >= FlashIndex_CNT)  {return 1;}
 
             E_Layer[Layer].Type         = USART_BUFFER[*ReadPoint + ElmOpr_Gp1_Type];
             E_Layer[Layer].PipelineFlag = USART_BUFFER[*ReadPoint + ElmOpr_p1_Pcr_Piplin];
@@ -257,7 +302,8 @@ static inline uint8_t ElementOperation(uint8_t* ReadPoint)
             E_Layer[Layer].Block_Xsize_Target   = USART_BUFFER[*ReadPoint + ElmOpr_p1_Blk_BlkXsz];
             E_Layer[Layer].Block_Ysize          = USART_BUFFER[*ReadPoint + ElmOpr_p1_Blk_BlkYsz];
             E_Layer[Layer].Block_Ysize_Target   = USART_BUFFER[*ReadPoint + ElmOpr_p1_Blk_BlkYsz];
-            E_Layer[Layer].Block_Corners        = USART_BUFFER[*ReadPoint + ElmOpr_p1_Blk_BlkCnr];
+            if (USART_BUFFER[*ReadPoint + ElmOpr_p1_Blk_BlkCnr] & 0x80) {E_Layer[Layer].Block_Corners = ((USART_BUFFER[*ReadPoint + ElmOpr_p1_Blk_BlkCnr]&0x7f) < 8)? USART_BUFFER[*ReadPoint + ElmOpr_p1_Blk_BlkCnr] : 0x87;}
+            else                                                        {E_Layer[Layer].Block_Corners = (USART_BUFFER[*ReadPoint + ElmOpr_p1_Blk_BlkCnr] < 6)? USART_BUFFER[*ReadPoint + ElmOpr_p1_Blk_BlkCnr] : 0x05;}
 
             *ReadPoint += ElmOpr_p1_Blk_Check+1;
             return 0;
@@ -436,25 +482,6 @@ static inline uint8_t FrameClear(uint8_t* ReadPoint)
 
 
 
-static inline uint8_t LowPower(uint8_t* ReadPoint)
-{
-    uint8_t i;
-
-    if (USART_BUFFER_Size <= (*ReadPoint + 3))  {return 1;}
-
-    for (i = 0 ; i < 3 ; i++)
-    {
-        if (USART_BUFFER[*ReadPoint + i] != 0xd0)       {return 1;}
-    }
-
-    LowPower_Enable();
-    return 0;
-}
-
-
-
-
-
 static inline uint8_t ScreenSet(uint8_t* ReadPoint)
 {
     uint8_t i;
@@ -480,43 +507,4 @@ static inline uint8_t ScreenSet(uint8_t* ReadPoint)
 
     *ReadPoint += 3;
     return 0;
-}
-
-
-
-
-
-void RenderCmdLoad(void)
-{
-    uint8_t CmdCount, ReadPoint = USART_BUFFER_CmdData_p, i, LoadCheck;
-
-    CmdCount = USART_BUFFER[USART_BUFFER_CmdNum_p];
-    if (CmdCount == 0)
-    {
-        USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
-        return;
-    }
-
-    for (i = 0 ; i < CmdCount ; i++)
-    {
-        switch (GetCmdFlag(USART_BUFFER[ReadPoint]))
-        {
-            case ElementOperation_F:    {LoadCheck = ElementOperation(&ReadPoint);} break;
-            case LayerBaseValue_F:      {LoadCheck = LayerBaseValue(&ReadPoint);} break;
-            case StreamSet_F:           {LoadCheck = StreamSet(&ReadPoint);} break;
-            case StreamValue_F:         {LoadCheck = StreamValue(&ReadPoint);} break;
-            case StreamPause_F:         {LoadCheck = StreamPause(&ReadPoint);} break;
-            case BlockValue_F:          {LoadCheck = BlockValue(&ReadPoint);} break;
-            case DisableAllLayer_F:     {LoadCheck = DisableAllLayer(&ReadPoint);} break;
-            case FrameClear_F:          {LoadCheck = FrameClear(&ReadPoint);} break;
-            case LowPower_F:            {LoadCheck = LowPower(&ReadPoint);} break;
-            case ScreenSet_F:           {LoadCheck = ScreenSet(&ReadPoint);} break;
-            default:                    {LoadCheck = 1;}
-        }
-        if (LoadCheck)  {break;}
-    }
-    if (LoadCheck)  {BackData_Head = 0xf0;}
-    else            {BackData_Head = 0x00;}
-
-    USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
 }

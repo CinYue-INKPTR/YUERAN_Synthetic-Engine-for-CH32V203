@@ -5,6 +5,24 @@
 #include "HardSPI.h"
 #include "ch32v20x.h"
 
+/*================================================================================================*/
+// Part 1: Adjustable parameter macro definition
+// Cmd & CS pins speed
+#define OLED_CmdCSPin_Speed         GPIO_Speed_10MHz
+// Cmd pin
+#define OLED_CmdPin_Port            GPIOB
+#define OLED_CmdPin_Pin             GPIO_Pin_1
+// CS pin
+#define OLED_CSPin_Port             GPIOB
+#define OLED_CSPin_Pin              GPIO_Pin_3
+// RST pin
+#define OLED_RSTPin_Port            GPIOB
+#define OLED_RSTPin_Pin             GPIO_Pin_5
+
+#define OLED_Model 0
+// 128*64   > 0
+// 72*40    > 1
+
 #define OLED_ADD                        0x78
 
 #define OLED_Model_Index_MultiplexRatio 0
@@ -315,17 +333,21 @@ void OLED_Roll(uint8_t Page_Begin, uint8_t Page_End, uint8_t List_Begin, uint8_t
 void OLED_Init(OLED_AddressingMode AddressingMode, OLED_SetMode_X_Flip X_FlipMode, OLED_SetMode_Y_Flip Y_FlipMode, OLED_SetMode_Color ColorMode, uint8_t Brightness)
 {
     uint8_t i;
-
-    RCC_APB2PeriphClockCmd(OLED_CmdPin_RCC_APB2Periph | OLED_CSPin_RCC_APB2Periph, ENABLE);
     GPIO_InitTypeDef GPIO_InitStructure = {0};
+
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
     GPIO_InitStructure.GPIO_Pin		= OLED_CmdPin_Pin;
     GPIO_InitStructure.GPIO_Mode	= GPIO_Mode_Out_PP;
     GPIO_InitStructure.GPIO_Speed	= OLED_CmdCSPin_Speed;
     GPIO_Init(OLED_CmdPin_Port, &GPIO_InitStructure);
     GPIO_InitStructure.GPIO_Pin     = OLED_CSPin_Pin;
-    GPIO_InitStructure.GPIO_Mode    = GPIO_Mode_Out_PP;
-    GPIO_InitStructure.GPIO_Speed   = OLED_CmdCSPin_Speed;
     GPIO_Init(OLED_CSPin_Port, &GPIO_InitStructure);
+    GPIO_InitStructure.GPIO_Pin     = OLED_RSTPin_Pin;
+    GPIO_Init(OLED_RSTPin_Port, &GPIO_InitStructure);
+
+    GPIO_WriteBit(OLED_RSTPin_Port, OLED_RSTPin_Pin, Bit_RESET);
+    Delay_Ms(10);
+    GPIO_WriteBit(OLED_RSTPin_Port, OLED_RSTPin_Pin, Bit_SET);
 
     OLED_Set(OLED_SetMode_OtherOptions, OLED_SetMode_Show_DISABLE);
     OLED_Set(OLED_SetMode_OtherOptions, OLED_SetMode_Roll_DISABLE);

@@ -25,8 +25,6 @@ void W25Qxx_Erase_Chip(void);
 void W25Qxx_Erase_Block(uint32_t Addr);
 void W25Qxx_Erase_Sector(uint32_t Addr);
 
-void W25Qxx_PowerDown(FunctionalState NewState);
-
 //  static inline uint8_t W25Qxx_ReadByte(uint32_t Addr)
 void W25Qxx_GetIndex(void);
 

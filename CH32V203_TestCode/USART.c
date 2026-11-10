@@ -20,7 +20,7 @@
 void GetRenderingTime(void)
 {
     RenderingTime = TIM_GetCounter(TIM2);
-    RenderingTime = RenderingTime*100 / (TIM_PERIOD - 1);
+    RenderingTime = RenderingTime*100 / (1000/TIM_FPS*1000 - 1);
     if (GlobalFlag & GlobalFlag_TimeFull)   {RenderingTime = 100;}
 }
 
@@ -174,7 +174,7 @@ void USART_Setup(void)
     USART_InitStructure.USART_HardwareFlowControl   = USART_HardwareFlowControl_None;
     USART_InitStructure.USART_Mode                  = USART_Mode_Tx | USART_Mode_Rx;
     USART_Init(USART1, &USART_InitStructure);
-    USART_InitStructure.USART_BaudRate              = 230400;
+    USART_InitStructure.USART_BaudRate              = 2000000;
     USART_Init(USART2, &USART_InitStructure);
     
     // DMA

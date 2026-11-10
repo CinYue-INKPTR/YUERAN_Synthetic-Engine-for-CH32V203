@@ -28,24 +28,4 @@ void OLED_Draw_CmdTail(void);
 void OLED_Roll(uint8_t Page_Begin, uint8_t Page_End, uint8_t List_Begin, uint8_t List_End, OLED_RollMode RollMode);
 void OLED_Init(OLED_AddressingMode AddressingMode, OLED_SetMode_X_Flip X_FlipMode, OLED_SetMode_Y_Flip Y_FlipMode, OLED_SetMode_Color ColorMode, uint8_t Brightness);
 
-
-/*================================================================================================*/
-// Part 2: Adjustable parameter macro definition
-// Cmd & CS pins mapping register
-#define OLED_CmdPin_RCC_APB2Periph  RCC_APB2Periph_GPIOB
-#define OLED_CSPin_RCC_APB2Periph   RCC_APB2Periph_GPIOB
-// Cmd & CS pins speed
-#define OLED_CmdCSPin_Speed         GPIO_Speed_10MHz
-// Cmd pin
-#define OLED_CmdPin_Port            GPIOB
-#define OLED_CmdPin_Pin             GPIO_Pin_6
-// CS pin
-#define OLED_CSPin_Port             GPIOB
-#define OLED_CSPin_Pin              GPIO_Pin_7
-
-#define OLED_Model 0
-// 128*64   > 0
-// 128*32   > 1
-// 72*40    > 2
-
 #endif

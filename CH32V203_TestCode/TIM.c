@@ -14,7 +14,7 @@ void TIM_Init(void)
 
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
     TIM_TimeBaseInitStructure.TIM_Prescaler     = TIM_PRESCALER - 1;
-    TIM_TimeBaseInitStructure.TIM_Period        = TIM_PERIOD - 1;
+    TIM_TimeBaseInitStructure.TIM_Period        = 1000/TIM_FPS*1000 - 1;
     TIM_TimeBaseInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
     TIM_TimeBaseInitStructure.TIM_CounterMode   = TIM_CounterMode_Up;
     TIM_TimeBaseInit(TIM2, &TIM_TimeBaseInitStructure);

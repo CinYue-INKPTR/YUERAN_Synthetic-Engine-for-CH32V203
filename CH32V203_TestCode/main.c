@@ -5,7 +5,6 @@
 #include "HardSPI_W25Qxx.h"
 #include "USART.h"
 #include "TIM.h"
-#include "LowPower.h"
 
 #include "YUERAN_Define.h"
 #include "YUERAN_LoadE.h"
@@ -38,19 +37,16 @@ void ModePin_Init(void)
 
 int main(void)
 {
-	// System
+	// System initialization
     SystemCoreClockUpdate();
     NVIC_Interrupt_GroupInit();
     Delay_Init();
-	LowPower_Init();
 
 	// Hardware initialization
     HardSPI_Init();
     W25Qxx_Init();
     OLED_Init(OLED_AddressingMode_HorizontalMode, OLED_SetMode_X_Flip_Normal, OLED_SetMode_Y_Flip_Normal, OLED_SetMode_Color_Normal, 255);
 	ModePin_Init();
-
-	if (PWR_GetFlagStatus(PWR_FLAG_SB) == SET)	{LowPower_WKUP();}
 
 	// Software initialization
     USART_Setup();
@@ -59,7 +55,7 @@ int main(void)
 
     while(1)
     {
-		if (GPIO_ReadInputDataBit(ModePin_Port, ModePin_Pin) == RESET)
+		if (GPIO_ReadInputDataBit(ModePin_Port, ModePin_Pin) == Bit_RESET)
 		{
 			uint8_t i;
 			
@@ -96,7 +92,7 @@ int main(void)
 		{
 			HardSPI_SpeedChoose(HardSPI_Speed_Flash);
 			USART_SwitchTo(2);
-			while (GPIO_ReadInputDataBit(ModePin_Port, ModePin_Pin) == SET)	{Backstage();}
+			while (GPIO_ReadInputDataBit(ModePin_Port, ModePin_Pin) == Bit_SET)	{Backstage();}
 			USART_SwitchTo(1);
 			W25Qxx_GetIndex();
 		}

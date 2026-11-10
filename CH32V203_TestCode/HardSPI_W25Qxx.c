@@ -208,19 +208,6 @@ void W25Qxx_Erase_Sector(uint32_t Addr)
 
 
 
-
-void W25Qxx_PowerDown(FunctionalState NewState)
-{
-	W25Qxx_Start();
-	if(NewState == ENABLE)	{HardSPI_SwapBytes(W25Qxx_Cmd_PowerDown);}
-	else					{HardSPI_SwapBytes(W25Qxx_Cmd_ReleasePowerDown);}
-	W25Qxx_Stop();
-}
-
-
-
-
-
 static inline uint8_t W25Qxx_ReadByte(uint32_t Addr)
 {
 	uint8_t Byte;

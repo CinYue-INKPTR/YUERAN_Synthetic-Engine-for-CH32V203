@@ -26,6 +26,28 @@
 
 
 
+
+static inline void FcnE_Pos(uint8_t Layer, int8_t* Value_Now, int8_t Value_Order, uint8_t FcnINFO, uint8_t* SDstep, uint8_t* SUstep);
+static inline void FcnE_BlockSize(uint8_t Layer, uint8_t* Value_Now, uint8_t Value_Order, uint8_t FcnINFO, uint8_t* SDstep, uint8_t* SUstep);
+static inline void FcnE_Alpha(uint8_t Layer);
+static inline void FcnE_Stream(uint8_t Layer);
+void FcnE(uint8_t Layer)
+{
+	FcnE_Pos(Layer, &E_Layer[Layer].Xpos, E_Layer[Layer].Xpos_Target, E_Layer[Layer].Xpos_Fcn, &E_Layer[Layer].Xpos_Fcn_SDstep, &E_Layer[Layer].Xpos_Fcn_SUstep);
+	FcnE_Pos(Layer, &E_Layer[Layer].Ypos, E_Layer[Layer].Ypos_Target, E_Layer[Layer].Ypos_Fcn, &E_Layer[Layer].Ypos_Fcn_SDstep, &E_Layer[Layer].Ypos_Fcn_SUstep);
+	FcnE_Alpha(Layer);
+	FcnE_Stream(Layer);
+	if(E_Layer[Layer].Type == Type_DrawBlock)
+	{
+	    FcnE_BlockSize(Layer, &E_Layer[Layer].Block_Xsize, E_Layer[Layer].Block_Xsize_Target, E_Layer[Layer].Block_Xsize_Fcn, &E_Layer[Layer].Block_Xsize_Fcn_SDstep, &E_Layer[Layer].Block_Xsize_Fcn_SUstep);
+	    FcnE_BlockSize(Layer, &E_Layer[Layer].Block_Ysize, E_Layer[Layer].Block_Ysize_Target, E_Layer[Layer].Block_Ysize_Fcn, &E_Layer[Layer].Block_Ysize_Fcn_SDstep, &E_Layer[Layer].Block_Ysize_Fcn_SUstep);
+	}
+}
+
+
+
+
+
 static inline void FcnE_Pos(uint8_t Layer, int8_t* Value_Now, int8_t Value_Order, uint8_t FcnINFO, uint8_t* SDstep, uint8_t* SUstep)
 {
 	uint8_t value, distance, step;
@@ -307,15 +329,4 @@ static inline void FcnE_Stream(uint8_t Layer)
 
 
 
-void FcnE(uint8_t Layer)
-{
-	FcnE_Pos(Layer, &E_Layer[Layer].Xpos, E_Layer[Layer].Xpos_Target, E_Layer[Layer].Xpos_Fcn, &E_Layer[Layer].Xpos_Fcn_SDstep, &E_Layer[Layer].Xpos_Fcn_SUstep);
-	FcnE_Pos(Layer, &E_Layer[Layer].Ypos, E_Layer[Layer].Ypos_Target, E_Layer[Layer].Ypos_Fcn, &E_Layer[Layer].Xpos_Fcn_SDstep, &E_Layer[Layer].Ypos_Fcn_SUstep);
-	FcnE_Alpha(Layer);
-	FcnE_Stream(Layer);
-	if(E_Layer[Layer].Type == Type_DrawBlock)
-	{
-	    FcnE_BlockSize(Layer, &E_Layer[Layer].Block_Xsize, E_Layer[Layer].Block_Xsize_Target, E_Layer[Layer].Block_Xsize_Fcn, &E_Layer[Layer].Block_Xsize_Fcn_SDstep, &E_Layer[Layer].Block_Xsize_Fcn_SUstep);
-	    FcnE_BlockSize(Layer, &E_Layer[Layer].Block_Ysize, E_Layer[Layer].Block_Ysize_Target, E_Layer[Layer].Block_Ysize_Fcn, &E_Layer[Layer].Block_Xsize_Fcn_SDstep, &E_Layer[Layer].Block_Ysize_Fcn_SUstep);
-	}
-}
+

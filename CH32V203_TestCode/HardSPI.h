@@ -6,8 +6,8 @@
 
 typedef enum {HardSPI_Speed_Flash, HardSPI_Speed_OLED} HardSPI_Speed;
 
-void    HardSPI_SpeedChoose(HardSPI_Speed Speed);
-void 	HardSPI_Init(void);
+void HardSPI_SpeedChoose(HardSPI_Speed Speed);
+void HardSPI_Init(void);
 uint8_t HardSPI_SwapBytes(uint8_t Tx_Byte);
 
 #endif

@@ -34,7 +34,7 @@ void HardSPI_SpeedChoose(HardSPI_Speed Speed)
     SPI_InitStructure.SPI_CRCPolynomial     = 7;
     switch (Speed)
     {
-        case HardSPI_Speed_Flash:   {SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_16;} break;
+        case HardSPI_Speed_Flash:   {SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_4;} break;
         case HardSPI_Speed_OLED:    {SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_16;} break;
     }
     SPI_Init(HardSPI_Port, &SPI_InitStructure);

@@ -3,11 +3,8 @@
 
 #include "ch32v20x.h"
 
-// Frame time(US)
-#define TIM_PERIOD      20000
-
-// StreamFreeze: Function
-#define SrmFcnFrz_Max   500/(TIM_PERIOD/1000) - 1
+// FPS
+#define TIM_FPS         50
 
 // Type
 #define Type_Disable    0
@@ -22,10 +19,6 @@
 #define FRAME_ListSize      128
 #define E_Size              1024
 #define Text_ByteLength     32
-
-// Mask level
-#define R_Corners_Mask_LevelQuantity    6
-#define B_Corners_Mask_LevelQuantity    8
 
 // Flash index
 #define FlashIndex_Size     16
@@ -165,8 +158,6 @@ extern Element E_Layer[E_Layer_Size];
 extern uint8_t FRAME[FRAME_PageSize][FRAME_ListSize];
 extern uint8_t E[E_Size];
 extern uint16_t RenderingTime;
-extern const uint8_t B_Corners_Mask[16][8];
-extern const uint8_t R_Corners_Mask[12][8];
 
 extern uint8_t FlashIndex[FlashIndex_Quantity * FlashIndex_Size];
 extern uint8_t FlashIndex_CNT;
