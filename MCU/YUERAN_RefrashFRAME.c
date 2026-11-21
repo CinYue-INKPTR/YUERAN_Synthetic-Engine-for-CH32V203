@@ -1,4 +1,3 @@
-// v1.0.0.261113
 #include "YUERAN_RefrashFRAME.h"
 
 #include <stdint.h>

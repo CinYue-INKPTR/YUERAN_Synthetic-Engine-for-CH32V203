@@ -1,5 +1,3 @@
-// v1.0.0.261113
-
 #ifndef HardSPI_W25Qxx_H
 #define HardSPI_W25Qxx_H
 

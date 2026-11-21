@@ -1,4 +1,3 @@
-// v1.0.0.261113
 #ifndef HardSPI_H
 #define HardSPI_H
 

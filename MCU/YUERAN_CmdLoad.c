@@ -1,4 +1,3 @@
-// v1.0.0.261113
 #include "YUERAN_CmdLoad.h"
 
 #include "ch32v20x.h"
@@ -352,6 +351,7 @@ static inline uint8_t StreamSet(uint8_t* ReadPoint)
     if (Layer >= E_Layer_Size)                                  {return 1;}
     if (USART_BUFFER_Size <= (*ReadPoint + SrmSet_p1_Check))    {return 1;}
     if (CmdChecker(*ReadPoint, SrmSet_p1_Check))                {return 1;}
+    if (E_Layer[Layer].Type == Type_DrawBlock)                  {return 0;}
 
     E_Layer[Layer].StreamAdd            = ((uint16_t)USART_BUFFER[*ReadPoint + SrmSet_p2_Add] << 8)|
                                           USART_BUFFER[*ReadPoint + SrmSet_p2_Add+1];
@@ -376,6 +376,7 @@ static inline uint8_t StreamValue(uint8_t* ReadPoint)
     if (Layer >= E_Layer_Size)                                  {return 1;}
     if (USART_BUFFER_Size <= (*ReadPoint + SrmVlu_p1_Check))    {return 1;}
     if (CmdChecker(*ReadPoint, SrmVlu_p1_Check))                {return 1;}
+    if (E_Layer[Layer].Type == Type_DrawBlock)                  {return 0;}
 
     E_Layer[Layer].StreamAdd_Target     = ((uint16_t)USART_BUFFER[*ReadPoint + SrmVlu_p2_Add] << 8)|
                                           (uint16_t)USART_BUFFER[*ReadPoint + SrmVlu_p2_Add+1];
@@ -398,6 +399,7 @@ static inline uint8_t StreamPause(uint8_t* ReadPoint)
     if (Layer >= E_Layer_Size)                                  {return 1;}
     if (USART_BUFFER_Size <= (*ReadPoint + SrmPus_p1_Check))    {return 1;}
     if (CmdChecker(*ReadPoint, SrmPus_p1_Check))                {return 1;}
+    if (E_Layer[Layer].Type == Type_DrawBlock)                  {return 0;}
 
     if (USART_BUFFER[*ReadPoint + SrmPus_p1_PusEn]) {E_Layer[Layer].Stream_Pause |= 0x80;}
     else                                            {E_Layer[Layer].Stream_Pause &= ~0x80;}

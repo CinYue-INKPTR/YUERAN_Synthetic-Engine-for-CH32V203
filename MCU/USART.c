@@ -1,4 +1,3 @@
-// v1.0.0.261113
 #include "USART.h"
 
 #include "ch32v20x.h"

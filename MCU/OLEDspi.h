@@ -1,4 +1,3 @@
-// v1.0.0.261113
 #ifndef OLEDspi_H
 #define OLEDspi_H
 

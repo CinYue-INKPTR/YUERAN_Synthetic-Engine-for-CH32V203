@@ -1,4 +1,3 @@
-// v1.0.0.261113
 #include "YUERAN_FcnE.h"
 
 #include <stdint.h>

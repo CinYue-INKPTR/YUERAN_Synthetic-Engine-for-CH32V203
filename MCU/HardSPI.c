@@ -1,4 +1,3 @@
-// v1.0.0.261113
 #include "HardSPI.h"
 
 #include "ch32v20x.h"

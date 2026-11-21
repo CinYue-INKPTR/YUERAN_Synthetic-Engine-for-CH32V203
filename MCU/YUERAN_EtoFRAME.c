@@ -1,4 +1,3 @@
-// v1.0.0.261113
 #include <stdint.h>
 #include "YUERAN_EtoFRAME.h"
 #include "YUERAN_Define.h"

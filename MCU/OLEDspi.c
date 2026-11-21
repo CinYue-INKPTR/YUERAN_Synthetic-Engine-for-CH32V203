@@ -1,4 +1,3 @@
-// v1.0.0.261113
 /*================================================================================================*/
 // Part 1: Libraries and fixed parameter macro definitions
 #include "OLEDspi.h"

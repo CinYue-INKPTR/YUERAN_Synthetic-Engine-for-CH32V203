@@ -1,4 +1,3 @@
-// v1.0.0.261113
 #ifndef YUERAN_CmdLoad_H
 #define YUERAN_CmdLoad_H
 

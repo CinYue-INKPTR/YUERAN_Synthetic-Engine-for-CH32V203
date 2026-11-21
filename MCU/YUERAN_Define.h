@@ -1,4 +1,3 @@
-// v1.0.0.261113
 #ifndef YUERAN_Define_H
 #define YUERAN_Define_H
 
@@ -162,8 +161,6 @@ extern uint16_t RenderingTime;
 
 extern uint8_t FlashIndex[FlashIndex_Quantity * FlashIndex_Size];
 extern uint8_t FlashIndex_CNT;
-
-extern uint8_t TEST_VALUE[16];
 
 extern volatile uint8_t USART_BUFFER[USART_BUFFER_Size];
 extern volatile uint8_t USART_BUFFER_CNT;

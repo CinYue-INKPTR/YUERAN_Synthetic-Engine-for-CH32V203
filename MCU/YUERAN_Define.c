@@ -1,4 +1,3 @@
-// v1.0.0.261113
 #include "YUERAN_Define.h"
 
 #include "ch32v20x.h"
@@ -10,8 +9,6 @@ uint16_t RenderingTime = 0;
 
 uint8_t FlashIndex[FlashIndex_Quantity * FlashIndex_Size] = {0};
 uint8_t FlashIndex_CNT = 0;
-
-uint8_t TEST_VALUE[16];
 
 volatile uint8_t USART_BUFFER[USART_BUFFER_Size] = {0};
 volatile uint8_t USART_BUFFER_CNT = 0;
